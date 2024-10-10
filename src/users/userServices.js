@@ -168,7 +168,8 @@ exports.getAllUsers = async () => {
                 orderedHashrate: 1,
                 electricitySpendings: 1,
                 miningData: 1,
-                created_at: 1
+                created_at: 1,
+                createdAt: 1,
             },
         },
         {
