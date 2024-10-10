@@ -22,7 +22,7 @@ exports.createMachine = async (machineData, file) => {
         performance: '100',
         specHashrate,
         specElectricitySpending,
-        image: file ? file.path : null
+        image: file ? file.path?.replace('public/', '') : null
     })
 
     await machine.save()
@@ -46,7 +46,7 @@ exports.updateMachine = async (machineId, machineData, file) => {
     machine.specElectricitySpending = specElectricitySpending
 
     if (file) {
-        machine.image = file.path
+        machine.image = file.path?.replace('public/', '')
     }
 
     await machine.save()
