@@ -168,8 +168,14 @@ exports.getAllUsers = async () => {
                 orderedHashrate: 1,
                 electricitySpendings: 1,
                 miningData: 1,
+                created_at: 1
             },
         },
+        {
+            $sort: {
+                'created_at': -1
+            }
+        }
     ])
     return successResponse(users, 'Users get successfully')
 }

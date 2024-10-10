@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
     electricitySpendings: Number,
     minPayoutAmount: Number,
     walletAddress: String,
+    created_at: Date,
+    updated_at: Date,
 }, {
     timestamps: true,
 });
