@@ -15,7 +15,7 @@ exports.getAll = async (req, res, next) => {
     }
 };
 
-exports.storeOrUpdate = async (req, res, id = null) => {
+exports.storeOrUpdate = async (req, res) => {
     try {
         const { title, description, status } = req.body;
 
@@ -25,24 +25,20 @@ exports.storeOrUpdate = async (req, res, id = null) => {
             imagePath = 'notifications/' + req.file.filename;
         }
 
-        if (id) {
-            // Update existing notification
-            const notification = await Notification.findById(id);
-            if (!notification) {
-                return { status: 404, data: { status: false, message: 'Notification not found' } };
-            }
+        // Check if there's at least one record in the database
+        const existingNotification = await Notification.findOne();
 
-            notification.title = title;
-            notification.description = description;
-            notification.status = status === 'true' || status === '1';
+        if (existingNotification) {
+            existingNotification.title = title;
+            existingNotification.description = description;
+            existingNotification.status = status === 'true' || status === '1';
             if (imagePath) {
-                notification.image = imagePath;
+                existingNotification.image = imagePath;
             }
 
-            await notification.save();
-            return { status: 200, data: { status: true, message: 'Notification updated successfully' } };
+            await existingNotification.save();
+            return res.status(200).json({ status: true, message: 'Notification updated successfully' });
         } else {
-            // Create new notification
             const newNotification = new Notification({
                 title,
                 description,
@@ -51,9 +47,9 @@ exports.storeOrUpdate = async (req, res, id = null) => {
             });
 
             await newNotification.save();
-            return { status: 201, data: { status: true, message: 'Notification created successfully' } };
+            return res.status(201).json({ status: true, message: 'Notification created successfully' });
         }
     } catch (error) {
-        return { status: 500, data: { status: false, message: error.message } };
+        return res.status(500).json({ status: false, message: error.message });
     }
 };
