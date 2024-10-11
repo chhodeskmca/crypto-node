@@ -110,7 +110,7 @@ class MiningUtils {
      */
     updateArray(arr, value, limit) {
         if (arr.length >= limit) arr.shift() // Remove oldest value if limit is reached
-        arr.push(value)
+        arr.push(parseFloat(value.toFixed(6)))
     }
 
     /**

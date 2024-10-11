@@ -16,7 +16,7 @@ function convertStringToNumber(string) {
     if (isNaN(number)) {
         throw new Error(`Unable to convert "${string}" to a number.`)
     }
-    return parseFloat(number.toFixed(14))
+    return parseFloat(number.toFixed(6))
 }
 
 
@@ -150,7 +150,11 @@ exports.getCurrentHashRate = async () => {
 
                     await Balance.updateOne(
                         { userId: user._id },
-                        { balance: 0, kaspa: newKaspaBalance, electricity: newElectricityBalance }
+                        {
+                            balance: 0,
+                            kaspa: convertStringToNumber(newKaspaBalance),
+                            electricity: convertStringToNumber(newElectricityBalance)
+                        }
                     )
                 } else {
                     await Balance.create({
