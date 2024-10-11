@@ -55,8 +55,7 @@ const startServer = async () => {
 const setupCronJob = () => {
     cron.schedule('* * * * *', async () => {
         try {
-            const response = await MiningController.getCurrentHashRateController()
-            console.log('API response:', response)
+            await MiningController.getCurrentHashRateController()
         } catch (error) {
         }
     })
