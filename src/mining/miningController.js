@@ -1,5 +1,6 @@
 const MiningServices = require('./miningService')
 const { validationResult } = require('express-validator')
+const moment = require('moment')
 
 // Controller for updating default mining
 exports.updateDefaultMiningController = async (req, res) => {
@@ -45,7 +46,7 @@ exports.getUserEarningsController = async (req, res) => {
 exports.getCurrentHashRateController = async (req, res) => {
     try {
         const result = await MiningServices.getCurrentHashRate(req)
-        console.log('result:', result)
+        console.log(`Mining completed at ${moment().format('YYYY-MM-DD HH:mm:ss ZZ')}`)
         res.status(200).json(result)
     } catch (error) {
         res.status(500).json({ error: error.message })

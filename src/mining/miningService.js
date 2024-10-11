@@ -12,7 +12,7 @@ const miningInstance = new MiningUtils()
 // Utility function to convert strings to numbers
 function convertStringToNumber(string) {
     if (!string) return 0
-    const number = parseFloat(string)
+    const number = parseFloat(string.toFixed(4))
     if (isNaN(number)) {
         throw new Error(`Unable to convert "${string}" to a number.`)
     }
@@ -78,7 +78,7 @@ exports.getUserEarnings = async (req) => {
         minPayout: convertStringToNumber(minPayout?.minimumBalance) || 0,
         balance: convertStringToNumber(user.userBalance?.balance) || 0,
         kaspa: convertStringToNumber(user.userBalance?.kaspa) || 0,
-        minute: response.coins,
+        minute: convertStringToNumber(response.coins),
         minEarning: response.dollars,
         currentDollarPrice: response.price,
         orderedHashRate: convertStringToNumber(user?.orderedHashrate) || 0,
