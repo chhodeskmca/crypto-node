@@ -26,23 +26,26 @@ exports.updateStatus = async (req) => {
         const { twoFactorAuthentication } = req.body;
 
         // Retrieve the settings from the database (findOne() to get a single document)
-        let twoFactorSetting = await AdminAuthentication.findOne().exec();
+        let twoFactorSetting = await AdminAuthentication.findOne().exec()
 
         // Check if the settings document exists and update it
         if (twoFactorSetting) {
-            twoFactorSetting.authenticationEnabled = !!twoFactorAuthentication; // Convert to boolean
-            await twoFactorSetting.save();
+            await AdminAuthentication.updateOne(
+                { _id: twoFactorSetting._id },
+                { authenticationEnabled: !!twoFactorAuthentication },
+                { upsert: true }
+            )
         } else {
             // If no settings document is found, create a new one
             twoFactorSetting = new AdminAuthentication({ authenticationEnabled: !!twoFactorAuthentication });
-            await twoFactorSetting.save();
+            await twoFactorSetting.save()
         }
 
-        return { status: true, message: 'Settings updated successfully' };
+        return { status: true, message: 'Settings updated successfully' }
     } catch (error) {
-        return { status: false, message: error.message };
+        return { status: false, message: error.message }
     }
-};
+}
 
 exports.get = async () => {
     try {

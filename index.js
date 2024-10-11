@@ -16,12 +16,6 @@ const transactionsRoutes = require('./src/transactions/transactionsRoutes')
 const forgotPasswordRoutes = require('./src/forgotPassword/forgotPasswordRoute')
 const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRoutes')
 const MiningController = require('./src/mining/miningController')
-const User = require('./src/users/userModel')
-const Mining = require('./src/mining/miningModel')
-const Balance = require('./src/balance/balanceModel')
-const { AssignedMachine, Machine } = require('./src/machine/machineModel')
-const PayoutRequest = require('./src/payout/request/payoutRequestModel')
-const Transaction = require('./src/transactions/transactionsModel')
 
 
 const app = express()
@@ -71,35 +65,6 @@ const setupCronJob = () => {
 
 
 
-async function updateBalanceUserIds() {
-    try {
-        // Step 1: Retrieve all balance documents
-        const minings = await Transaction.find().lean()
-
-
-        // Step 2: Loop through each balance and update the userId with user._id
-        for (const balance of minings) {
-             // Step 2a: Find the corresponding user using balance.userId
-            const user = await User.findOne({ id: balance.userId }); // Adjust query if needed based on your schema
-
-            // Step 2b: If user is found, update balance.userId with user._id
-            if (user) {
-                await Transaction.updateOne(
-                    { _id: balance._id }, // Match by balance's _id
-                    { $set: { userId: user._id } } // Replace userId with user's _id
-                );
-                console.log(`Updated balance ${balance._id} userId to ${user._id}`)
-            }
-        }
-
-        console.log('Balance userId update complete!');
-    } catch (error) {
-        console.error('Error updating balance userIds:', error.message)
-    }
-}
-
-// // Call the function to perform the update
-// updateBalanceUserIds()
 // Initialize the server setup
 const initializeServer = () => {
     setupMiddleware()
