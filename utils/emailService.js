@@ -1,13 +1,6 @@
-const nodemailer = require('nodemailer');
+const { mailSMTP } = require('../config');
 
 exports.sendPayoutRequestMail = async (data) => {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.MAIL_USERNAME,
-            pass: process.env.MAIL_PASSWORD,
-        },
-    });
 
     const mailOptions = {
         from: process.env.MAIL_USERNAME,
@@ -17,13 +10,15 @@ exports.sendPayoutRequestMail = async (data) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const response = await mailSMTP.sendMail(mailOptions)
+        console.log("Email sent:", response)
     } catch (error) {
-        console.error('Error sending mail:', error);
+        console.error('Error sending mail:', error)
     }
-};
+}
+
 // Send email to admin
-exports.sendEmailToAdmin = (data) => {
+exports.sendEmailToAdmin = async (data) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: process.env.EMAIL_ADMIN,
@@ -31,5 +26,10 @@ exports.sendEmailToAdmin = (data) => {
         text: `User ${data.name} has requested ${data.performance}.`
     };
 
-    return transporter.sendMail(mailOptions);
-};
+    try {
+        const response = await mailSMTP.sendMail(mailOptions)
+        console.log("Email sent:", response)
+    } catch (error) {
+        console.error('Error sending mail:', error)
+    }
+}

@@ -1,35 +1,29 @@
-const forgotPasswordService = require("./forgotPasswordService");
-const User = require("../users/userModel");
-const nodemailer = require("nodemailer");
-const bcrypt = require("bcrypt");
-const ForgotPassword = require("./forgotPasswordModel");
+const forgotPasswordService = require("./forgotPasswordService")
+const User = require("../users/userModel")
+const bcrypt = require("bcrypt")
+const ForgotPassword = require("./forgotPasswordModel")
+const { mailSMTP } = require("../../config")
 
 exports.createOrUpdateForgotPasswordEntry = async (req, res) => {
     try {
         const { email } = req.body;
         const { otp } =
-            await forgotPasswordService.createOrUpdateForgotPasswordEntry(email);
+            await forgotPasswordService.createOrUpdateForgotPasswordEntry(email)
 
-        // Setup nodemailer or another email sending service
-        const transporter = nodemailer.createTransport({
-            host: process.env.MAIL_HOST, // smtp.your-email-provider.com
-            port: process.env.MAIL_PORT, // 587
-            secure: process.env.MAIL_ENCRYPTION === "ssl", // true for 465, false for other ports
-            auth: {
-                user: process.env.MAIL_USERNAME, // your_email@example.com
-                pass: process.env.MAIL_PASSWORD, // your_email_password
-            },
-            tls: {
-                rejectUnauthorized: false,
-            },
-        });
-
-        await transporter.sendMail({
-            from: process.env.MAIL_FROM_ADDRESS, // your_email@example.com
+        // Send OTP email
+        const mailOptions = {
+            from: process.env.MAIL_FROM_ADDRESS,
             to: email,
-            subject: "Forgot Password OTP",
+            subject: 'Forgot Password OTP',
             text: `Your OTP is ${otp}. It is valid for 10 minutes.`,
-        });
+        }
+
+        try {
+            const response = await mailSMTP.sendMail(mailOptions)
+            console.log("Email sent:", response)
+        } catch (error) {
+            console.error("Error sending email:", error)
+        }
 
         res.status(200).json({
             message:

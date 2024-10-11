@@ -72,7 +72,7 @@ exports.getUserEarnings = async (req) => {
     const user = users[0]
     const minPayout = await PayoutSetting.findOne()
     const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
-    const calculateMiningResponse = await miningInstance.calculateMining(user?.userMining)
+    const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining)
 
     const data = {
         minPayout: convertStringToNumber(minPayout?.minimumBalance) || 0,

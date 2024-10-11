@@ -104,7 +104,7 @@ async function updateBalanceUserIds() {
 const initializeServer = () => {
     setupMiddleware()
     setupRoutes()
-    setupCronJob()
+    // setupCronJob()
     startServer()
 }
 

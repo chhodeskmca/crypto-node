@@ -11,7 +11,7 @@ const { default: mongoose } = require("mongoose")
 const { customError } = require("../../utils/helper")
 const AdminAuthentication = require("../authentication/adminAuthenticationModel")
 const { mailSMTP } = require("../../config")
-const { ObjectId } = mongoose.Types;
+const { ObjectId } = mongoose.Types
 
 
 // Service function for creating a user
@@ -83,7 +83,7 @@ exports.login = async (req, res) => {
         }
 
         // Check if password is correct
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password)
         if (!isMatch) {
             throw customError({ code: 404, message: 'Incorrect password!' })
         }
@@ -98,29 +98,36 @@ exports.login = async (req, res) => {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' })
 
         // Check admin authentication settings
-        let adminAuthentication = await AdminAuthentication.findOne();
+        let adminAuthentication = await AdminAuthentication.findOne()
         const isAuthenticationOn = adminAuthentication ? adminAuthentication.authenticationEnabled : false
 
-        if (isAuthenticationOn && type === 'admin' && false) {
+        if (isAuthenticationOn && type === 'admin') {
             if (!adminAuthentication) {
                 adminAuthentication = new AdminAuthentication()
             }
 
             // Generate and save OTP
             const otp = Math.floor(100000 + Math.random() * 900000)
-            adminAuthentication.otp = otp;
-            adminAuthentication.validDuration = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+            adminAuthentication.otp = otp
+            adminAuthentication.validDuration = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
             adminAuthentication.userInfo = JSON.stringify({ token, user, authentication: isAuthenticationOn })
             await adminAuthentication.save()
 
             // Send OTP email
             const mailOptions = {
-                from: process.env.EMAIL_USER,
+                from: process.env.MAIL_FROM_ADDRESS,
                 to: process.env.MAIL_ADMIN,
                 subject: 'Admin Authentication OTP',
                 text: `Your OTP is ${otp}`,
-            };
-            await mailSMTP.sendMail(mailOptions)
+            }
+
+            mailSMTP.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error("Error sending email:", error)
+                } else {
+                    console.log("Email sent:", info.response)
+                }
+            })
 
             return {
                 token, user, authentication: isAuthenticationOn,
@@ -133,7 +140,7 @@ exports.login = async (req, res) => {
             message: 'Login successfully!'
         }
     } catch (error) {
-        console.error(error);
+        console.error(error)
         throw error
     }
 }
@@ -312,30 +319,72 @@ exports.deleteUser = async (userId) => {
 exports.updateUserMinPayoutAmount = async (userId, minPayoutAmount) => {
     try {
         // Find the user by ID
-        const user = await User.findById(userId);
+        const user = await User.findById(userId)
 
         // If user is not found, return a 404 response
         if (!user) {
             return {
                 statusCode: 404,
                 data: { status: false, message: 'User not found' }
-            };
+            }
         }
 
         // Update the minPayoutAmount field
-        user.minPayoutAmount = minPayoutAmount;
-        await user.save();
+        user.minPayoutAmount = minPayoutAmount
+        await user.save()
 
         // Return a success response
         return {
             statusCode: 200,
             data: { status: true, message: 'Minimum payout amount updated successfully' }
-        };
+        }
     } catch (error) {
         // Handle any errors that occur during the database operation
         return {
             statusCode: 500,
             data: { status: false, message: error.message }
-        };
+        }
+    }
+}
+
+
+exports.adminTwoFactorAuthentication = async (req, res) => {
+    try {
+        const { otp } = req.body
+
+
+
+        if (!otp) {
+            return res.status(422).json({ message: 'OTP is required', status: false })
+        }
+
+        // Find the OTP record in the database
+        const adminAuthentication = await AdminAuthentication.findOne({ otp })
+        console.log('adminAuthentication:', adminAuthentication)
+        if (!adminAuthentication) {
+            return res.status(404).json({ message: 'Invalid OTP', status: false })
+        }
+
+        // Check if OTP is expired
+        const currentTime = moment()
+        const validDuration = moment(adminAuthentication.validDuration)
+
+        if (currentTime.isAfter(validDuration)) {
+            return res.status(404).json({ message: 'OTP has expired', status: false })
+        }
+
+        // Decode the user info and update the record
+        const userInfo = JSON.parse(adminAuthentication.userInfo)
+
+        await AdminAuthentication.updateOne(
+            { _id: adminAuthentication._id },
+            { $set: { otp: 0, validDuration: null, userInfo: null } },
+            { upsert: true }
+        )
+
+
+        return res.status(200).json({ message: 'Login successfully!!', data: userInfo, status: true })
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal Server Error', status: false })
     }
 }

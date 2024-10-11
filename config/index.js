@@ -3,21 +3,21 @@ console.log(12321321)
 const mailSMTP = nodemailer.createTransport({
     port: process.env.MAIL_PORT,
     host: process.env.MAIL_HOST,
-    secure: false,
+    secure: true,
     auth: {
         user: process.env.MAIL_USERNAME,
         pass: process.env.MAIL_PASSWORD
     },
     tls: {
-        ciphers: process.env.MAIL_ENCRYPTION
+        rejectUnauthorized: false
     }
 })
 
 mailSMTP.verify((error, success) => {
     if (error) {
-        console.log('ERROR', 'Error connecting to Outlook SMTP server:', error)
+        console.error('Error connecting to Outlook SMTP server:', error)
     } else {
-        console.log('INFO', 'Outlook SMTP server is ready to send emails')
+        console.log('SMTP server is ready to send emails')
     }
 })
 

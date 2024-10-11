@@ -97,8 +97,8 @@ class MiningUtils {
                 weekCount: newWeekCount,
             }
         } catch (error) {
-            console.error('Error in addMiningKaspaToUserArray:', error.message);
-            return userArray;
+            console.error('Error in addMiningKaspaToUserArray:', error.message)
+            return userArray
         }
     }
 
@@ -109,8 +109,8 @@ class MiningUtils {
      * @param {number} limit - The maximum length of the array
      */
     updateArray(arr, value, limit) {
-        if (arr.length >= limit) arr.shift(); // Remove oldest value if limit is reached
-        arr.push(value);
+        if (arr.length >= limit) arr.shift() // Remove oldest value if limit is reached
+        arr.push(value)
     }
 
     /**
@@ -119,7 +119,7 @@ class MiningUtils {
      * @returns {number} - The sum of the array
      */
     sumArray(arr) {
-        return arr?.reduce((acc, val) => acc + parseFloat(val), 0) || 0;
+        return arr?.reduce((acc, val) => acc + parseFloat(val), 0) || 0
     }
 
     /**
@@ -129,15 +129,58 @@ class MiningUtils {
      */
     calculateMining(mining) {
         try {
-            const hourTotal = this.sumArray(mining?.hour) || 0;
-            const dayTotal = this.sumArray(mining?.day) + hourTotal || 0;
-            const weekTotal = this.sumArray(mining?.week) + dayTotal || 0;
-            const monthTotal = this.sumArray(mining?.month) + weekTotal || 0;
+            const hourTotal = this.sumArray(mining?.hour) || 0
+            const dayTotal = this.sumArray(mining?.day) + hourTotal || 0
+            const weekTotal = this.sumArray(mining?.week) + dayTotal || 0
+            const monthTotal = this.sumArray(mining?.month) + weekTotal || 0
 
-            return { hour: hourTotal, day: dayTotal, week: weekTotal, month: monthTotal };
+            return { hour: hourTotal, day: dayTotal, week: weekTotal, month: monthTotal }
         } catch (error) {
-            console.error('Error in calculateMining:', error.message);
-            return {};
+            console.error('Error in calculateMining:', error.message)
+            return {}
+        }
+    }
+    /**
+ * Sums the last N elements of an array.
+ * @param {Array} arr - The array of numbers.
+ * @param {number} count - The number of elements to sum from the end of the array.
+ * @returns {number} - The sum of the last N elements.
+ */
+    sumLastNElements = (arr, count) => {
+        return arr?.slice(-count).reduce((acc, val) => acc + parseFloat(val), 0) || 0
+    }
+
+
+    /**
+   * Calculates real-time mining earnings by considering only the current active values in the hour, day, week, and month arrays.
+   * @param {Object} userArray - The user's mining data (hour, day, week, month, minsCount, hoursCount, etc.)
+   * @returns {Object} - Object with real-time earnings for hour, day, week, and month.
+   */
+    calculateMiningEarnings = (userArray) => {
+        try {
+            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount } = userArray
+
+            const hourTotal = this.sumArray(hour) || 0
+
+            // Sum the last `hoursCount` elements in the day array plus the current hour total
+            const dayTotal = this.sumLastNElements(day, hoursCount) + this.sumLastNElements(hour, minsCount)
+
+            // Sum the last `daysCount` elements in the week array plus the current day total
+            const weekTotal = this.sumLastNElements(week, daysCount) + dayTotal
+
+            // Sum the last `weekCount` elements in the month array plus the current week total
+            const monthTotal = this.sumLastNElements(month, weekCount) + weekTotal
+
+            // Return the real-time earnings for each interval
+            return {
+                hour: parseFloat(hourTotal.toFixed(6)),
+                day: parseFloat(dayTotal.toFixed(6)),
+                week: parseFloat(weekTotal.toFixed(6)),
+                month: parseFloat(monthTotal.toFixed(6)),
+            }
+        } catch (error) {
+            console.error('Error in calculateMiningEarnings:', error.message)
+            return { hour: 0, day: 0, week: 0, month: 0 }
         }
     }
 
