@@ -60,7 +60,7 @@ class MiningUtils {
             // If an hour is complete, move hourly total to day array
             let newHoursCount = hoursCount
             if (newMinsCount === 60) {
-                newMinsCount = 0
+                newMinsCount = 1
                 const hourTotal = this.sumArray(hour)
                 this.updateArray(day, hourTotal, 24)
                 newHoursCount += 1
@@ -69,7 +69,7 @@ class MiningUtils {
             // If a day is complete, move daily total to week array
             let newDaysCount = daysCount
             if (newHoursCount === 24) {
-                newHoursCount = 0
+                newHoursCount = 1
                 const dayTotal = this.sumArray(day)
                 this.updateArray(week, dayTotal, 7)
                 newDaysCount += 1
@@ -78,7 +78,7 @@ class MiningUtils {
             // If a week is complete, move weekly total to month array
             let newWeekCount = weekCount
             if (newDaysCount === 7) {
-                newDaysCount = 0
+                newDaysCount = 1
                 const weekTotal = this.sumArray(week)
                 this.updateArray(month, weekTotal, 4) // Assuming 4 weeks in a month (for simplification)
                 newWeekCount += 1
