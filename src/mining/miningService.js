@@ -12,7 +12,7 @@ const miningInstance = new MiningUtils()
 // Utility function to convert strings to numbers
 function convertStringToNumber(string) {
     if (!string) return 0
-    const number = parseFloat(string.toFixed(4))
+    const number = parseFloat(string.toFixed(3))
     if (isNaN(number)) {
         throw new Error(`Unable to convert "${string}" to a number.`)
     }

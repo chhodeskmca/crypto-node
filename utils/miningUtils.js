@@ -173,10 +173,10 @@ class MiningUtils {
 
             // Return the real-time earnings for each interval
             return {
-                hour: parseFloat(hourTotal.toFixed(4)),
-                day: parseFloat(dayTotal.toFixed(4)),
-                week: parseFloat(weekTotal.toFixed(4)),
-                month: parseFloat(monthTotal.toFixed(4)),
+                hour: parseFloat(hourTotal.toFixed(3)),
+                day: parseFloat(dayTotal.toFixed(3)),
+                week: parseFloat(weekTotal.toFixed(3)),
+                month: parseFloat(monthTotal.toFixed(3)),
             }
         } catch (error) {
             console.error('Error in calculateMiningEarnings:', error.message)
