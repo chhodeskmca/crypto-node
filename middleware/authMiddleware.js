@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { WEB_DOMAINS, ROLE_TYPES } = require('../config');
 const User = require('../src/users/userModel');
+const { ObjectId } = require('../config/db');
 require('dotenv').config();
 
 const authenticateToken = async (req, res, next) => {
@@ -22,7 +23,7 @@ const authenticateToken = async (req, res, next) => {
 
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
         console.log('domain:', domain)
-        const user = await User.findById(decoded.id)
+        const user = await User.findOne({ _id: new ObjectId(decoded.id))
         console.log('user:', user)
 
         console.log('domain !== WEB_DOMAINS.localhost:', domain !== WEB_DOMAINS.localhost)
