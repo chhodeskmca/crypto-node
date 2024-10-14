@@ -1,17 +1,29 @@
 const axios = require('axios')
 const DefaultMining = require('../src/mining/defaultMiningModel') // Assuming you have a DefaultMining model
-
+const moment = require('moment')
 class MiningUtils {
     constructor() {
         this.url = process.env.NANOPOOL_URL
         this.defaultMiningId = '66d80de45059596f8f918949'
     }
 
-    /**
-     * Fetch mining data from the Nanopool API for the given hash rate
-     * @param {number} orderedHashRate - The user's mining hash rate
-     * @returns {Object} - Contains mining coins, dollars, and price
-     */
+    async getCurrentKaspaPrice() {
+        try {
+            const { data } = await axios.get(`${this.url}/prices`)
+            if (!data.status) {
+                console.error('API response status is false:', data)
+                return { price: 0.135438 }
+            }
+
+            return {
+                price: data.data.price_usd,
+            }
+        } catch (error) {
+            console.error('Error fetching Kaspa mining data:', error.message)
+            return { price: 0.135438 }
+        }
+    }
+
     async fetchPerMinuteKaspaMining(orderedHashRate) {
         try {
             const { data } = await axios.get(`${this.url}/approximated_earnings/${orderedHashRate}`)
@@ -25,7 +37,7 @@ class MiningUtils {
             return {
                 coins: kaspa,
                 dollars: data.data.minute.dollars,
-                price: data.data.prices.price_usd,
+                price: (await this.getCurrentKaspaPrice()).price,
             }
         } catch (error) {
             console.error('Error fetching Kaspa mining data:', error.message)
@@ -33,105 +45,46 @@ class MiningUtils {
         }
     }
 
-    /**
-     * Converts Terahash to Gigahash
-     * @param {number} teraHash - The hash rate in Terahash
-     * @returns {number} - The equivalent hash rate in Gigahash
-     */
     ordedTHsToGhs(teraHash) {
         return isNaN(teraHash) ? 0.00 : teraHash * 1000
     }
 
-
-
-    /**
-     * Adds the user's mining earnings for the current minute to the appropriate time interval arrays.
-     * When an hour/day/week/month is completed, the sum is rolled up to the next interval.
-     * @param {Object} userArray - The user's mining data
-     * @param {number} coins - The amount of coins mined in this minute
-     * @returns {Object} - Updated userArray with new earnings
-     */
     addMiningKaspaToUserArray(userArray, coins) {
         try {
-            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount, balance } = userArray
+            const { hour, earnings = [], minsCount } = userArray
 
             // Update hour array with current minute's earnings
             this.updateArray(hour, coins, 60)
             let newMinsCount = minsCount + 1
 
-            // If an hour is complete, move hourly total to day array
-            let newHoursCount = hoursCount
-
             if (newMinsCount === 60) {
                 newMinsCount = 0
                 const hourTotal = this.sumArray(hour)
-                this.updateArray(day, hourTotal, 24)
-                newHoursCount += 1
+                this.updateArray(earnings, hourTotal, 720, true)
             }
 
-            let newDaysCount = daysCount
-
-            if (newHoursCount === 24) {
-                newHoursCount = 0
-                const dayTotal = this.sumArray(day)
-                this.updateArray(week, dayTotal, 7)
-                newDaysCount += 1
-            }
-
-            let newWeekCount = weekCount
-            if (newDaysCount === 7) {
-                newDaysCount = 0
-                const weekTotal = this.sumArray(week)
-                this.updateArray(month, weekTotal, 4)
-                newWeekCount += 1
-            }
-
-            if (newWeekCount === 4) {
-                newWeekCount = 0
-            }
-            // Return updated mining data
             return {
                 ...userArray,
                 hour,
-                day,
-                week,
-                month,
-                minsCount: newMinsCount,
-                hoursCount: newHoursCount,
-                daysCount: newDaysCount,
-                weekCount: newWeekCount,
+                earnings,
+                minsCount: newMinsCount
             }
         } catch (error) {
-            console.error('Error in addMiningKaspaToUserArray:', error.message)
+            console.error('Error in addMiningKaspaToUserArray:', error)
             return userArray
         }
     }
 
-    /**
-     * Adds a value to an array, ensuring it does not exceed the specified limit.
-     * @param {Array} arr - The array to update
-     * @param {number} value - The value to add
-     * @param {number} limit - The maximum length of the array
-     */
-    updateArray(arr, value, limit) {
-        if (arr.length >= limit) arr.shift() // Remove oldest value if limit is reached
-        arr.push(parseFloat(value.toFixed(6)))
+    updateArray(arr, value, limit, date = false) {
+        if (arr.length >= limit) arr.shift()
+        if (!date) arr.push(parseFloat(value.toFixed(6)))
+        if (date) arr.push({ time: moment().format(), amount: parseFloat(value.toFixed(6)) })
     }
 
-    /**
-     * Sums all the values in the provided array.
-     * @param {Array} arr - The array of numbers
-     * @returns {number} - The sum of the array
-     */
     sumArray(arr) {
         return arr?.reduce((acc, val) => acc + parseFloat(val), 0) || 0
     }
 
-    /**
-     * Calculates the total mining earnings for hour, day, week, and month.
-     * @param {Object} mining - The mining object with the arrays and counts
-     * @returns {Object} - Total earnings for each period
-     */
     calculateMining(mining) {
         try {
             const hourTotal = this.sumArray(mining?.hour) || 0
@@ -145,85 +98,66 @@ class MiningUtils {
             return {}
         }
     }
-    /**
-    * Sums the last N elements of an array.
-    * @param {Array} arr - The array of numbers.
-    * @param {number} count - The number of elements to sum from the end of the array.
-    * @returns {number} - The sum of the last N elements.
-    */
+
     sumLastNElements = (arr, count) => {
         return arr?.slice(-count).reduce((acc, val) => acc + parseFloat(val), 0) || 0
     }
 
-
-    /**
-    * Calculates real-time mining earnings by considering only the current active values in the hour, day, week, and month arrays.
-    * @param {Object} userArray - The user's mining data (hour, day, week, month, minsCount, hoursCount, etc.)
-    * @returns {Object} - Object with real-time earnings for hour, day, week, and month.
-    */
-    calculateMiningEarnings = (userArray) => {
+    async calculateMiningEarnings(userEarnings, kaspaBalance) {
         try {
-            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount } = userArray;
+            const { hour, earnings, minsCount } = userEarnings
 
             const hourTotal = this.sumArray(hour) || 0
 
-            const dayTotal = day.length ? this.sumLastNElements(hour, minsCount) + this.sumArray(day) : this.sumArray(hour)
-
-            const weekTotal = week.length ? this.sumLastNElements(day, hoursCount) + this.sumArray(week) : dayTotal
-
-            const monthTotal = month.length ? this.sumArray(month) : weekTotal
+            const dayTotal = getLast24HoursEarnings(earnings, kaspaBalance)
+            const weekTotal = getLast7DaysEarnings(earnings, kaspaBalance)
+            const monthTotal = getLast30DaysEarnings(earnings, kaspaBalance)
 
             return {
-                hour: parseFloat(hourTotal.toFixed(3)),
-                day: parseFloat(dayTotal.toFixed(3)),
-                week: parseFloat(weekTotal.toFixed(3)),
-                month: parseFloat(monthTotal.toFixed(3)),
+                hour: parseFloat(hourTotal.toFixed(6)),
+                day: parseFloat(dayTotal.toFixed(6)),
+                week: parseFloat(weekTotal.toFixed(6)),
+                month: parseFloat(monthTotal.toFixed(6)),
             };
         } catch (error) {
-            console.error('Error in calculateMiningEarnings:', error.message);
-            return { hour: 0, day: 0, week: 0, month: 0 };
+            console.error('Error in calculateMiningEarnings:', error)
+            return { hour: 0, day: 0, week: 0, month: 0 }
         }
     }
 
-    /**
-     * Gets the default mining data or uses fallback values if unavailable.
-     * @returns {Object} - Default mining data with minimum and maximum values
-     */
+
+
     async getDefaultMiningData(orderedHashRate) {
+
         try {
             const defaultMining = await DefaultMining.findById(this.defaultMiningId)
             const minimum = defaultMining ? defaultMining.minimum : 23
             const maximum = defaultMining ? defaultMining.maximum : 27
 
             const kaspa = (Math.random() * (maximum - minimum) + minimum) / 24 / 60
+            const currentPrice = (await this.getCurrentKaspaPrice()).price
 
             return {
                 coins: kaspa * orderedHashRate,
-                dollars: "0.47944015812997",
-                price: '0.47944015812997'
+                dollars: currentPrice,
+                price: currentPrice
             }
 
         } catch (error) {
             console.error('Error fetching default mining data:', error.message)
-            const minimum = 23
-            const maximum = 27
+            const minimum = 10
+            const maximum = 17
 
             const kaspa = (Math.random() * (maximum - minimum) + minimum) / 24 / 60
 
             return {
                 coins: kaspa * orderedHashRate,
-                dollars: "0.47944015812997",
-                price: '0.47944015812997'
+                dollars: currentPrice,
+                price: currentPrice
             }
         }
     }
 
-    /**
-     * Gets the daily Kaspa mining earnings, applying default values if needed.
-     * @param {number} kaspa - Kaspa earnings for the current minute
-     * @param {number} orderedHashRate - User's hash rate
-     * @returns {number} - Daily Kaspa earnings
-     */
     async getDayKaspaMining(kaspa, orderedHashRate) {
         try {
             const defaultMining = await this.getDefaultMiningData()
@@ -242,3 +176,46 @@ class MiningUtils {
 }
 
 module.exports = MiningUtils
+
+
+
+
+
+
+
+
+
+function sumLastXHours(earningsArray, numHours) {
+    return earningsArray
+        .slice(-numHours)
+        .reduce((sum, entry) => sum + entry.amount, 0)
+}
+
+
+function sumExtraMinutes(hourArray, minutesCount) {
+    return hourArray
+        .slice(0, minutesCount)
+        .reduce((sum, amount) => sum + amount, 0)
+}
+
+
+function getLast24HoursEarnings(earnings, kaspaBalance) {
+    const day = 24
+    const last23HoursEarnings = sumLastXHours(earnings, day)
+    // const extraMinutesEarnings = sumExtraMinutes(hourEarnings, minsCount)
+    return earnings.length < day ? kaspaBalance : last23HoursEarnings
+}
+
+
+function getLast7DaysEarnings(earnings, kaspaBalance) {
+    const week = 168
+    const last167HoursEarnings = sumLastXHours(earnings, 168)
+    return earnings.length < week ? kaspaBalance : last167HoursEarnings
+}
+
+
+function getLast30DaysEarnings(earnings, kaspaBalance) {
+    const month = 720
+    const last719HoursEarnings = sumLastXHours(earnings, month)
+    return earnings.length < month ? kaspaBalance : last719HoursEarnings
+}

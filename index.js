@@ -16,6 +16,7 @@ const transactionsRoutes = require('./src/transactions/transactionsRoutes')
 const forgotPasswordRoutes = require('./src/forgotPassword/forgotPasswordRoute')
 const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRoutes')
 const MiningController = require('./src/mining/miningController')
+const MiningUtils = require('./utils/miningUtils')
 
 
 const app = express()
@@ -55,13 +56,12 @@ const startServer = async () => {
 const setupCronJob = () => {
     cron.schedule('* * * * *', async () => {
         try {
-            await MiningController.getCurrentHashRateController()
+            await MiningController.minePerMinuteController()
         } catch (error) {
         }
     })
     console.log('Cron job started')
 }
-
 
 
 // Initialize the server setup

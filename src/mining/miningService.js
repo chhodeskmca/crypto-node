@@ -12,7 +12,7 @@ const miningInstance = new MiningUtils()
 // Utility function to convert strings to numbers
 function convertStringToNumber(string) {
     if (!string) return 0
-    const number = parseFloat(string.toFixed(3))
+    const number = parseFloat(string.toFixed(6))
     if (isNaN(number)) {
         throw new Error(`Unable to convert "${string}" to a number.`)
     }
@@ -69,15 +69,17 @@ exports.getUserEarnings = async (req) => {
         throw new Error('User not found')
     }
 
+
     const user = users[0]
+    const kaspa = convertStringToNumber(user.userBalance?.kaspa) || 0
     const minPayout = await PayoutSetting.findOne()
     const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
-    const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining)
+    const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining, kaspa)
 
     const data = {
         minPayout: convertStringToNumber(minPayout?.minimumBalance) || 0,
-        balance: convertStringToNumber(user.userBalance?.balance) || 0,
-        kaspa: convertStringToNumber(user.userBalance?.kaspa) || 0,
+        balance: 0,
+        kaspa: kaspa,
         minute: convertStringToNumber(response.coins),
         minEarning: response.dollars,
         currentDollarPrice: response.price,
@@ -90,7 +92,7 @@ exports.getUserEarnings = async (req) => {
 }
 
 // Service function for getting current hash rate
-exports.getCurrentHashRate = async () => {
+exports.minePerMinute = async () => {
     const users = await User.aggregate([
         {
             $match: {
@@ -120,9 +122,10 @@ exports.getCurrentHashRate = async () => {
 
 
     await Promise.all(users.map(async (user) => {
+
         const latestElectricity = convertStringToNumber(user.electricitySpendings) / 60
 
-        if (user.userMining) {
+        if (user.userMining && user.orderedHashrate) {
             const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
 
             if (response) {
@@ -130,13 +133,8 @@ exports.getCurrentHashRate = async () => {
 
                 const miningUpdateFields = {
                     minsCount: modifiedUser.minsCount,
-                    hoursCount: modifiedUser.hoursCount,
-                    daysCount: modifiedUser.daysCount,
-                    weekCount: modifiedUser.weekCount,
                     hour: modifiedUser.hour,
-                    day: modifiedUser.day,
-                    week: modifiedUser.week,
-                    month: modifiedUser.month
+                    earnings: modifiedUser.earnings
                 }
 
                 await Mining.updateOne({ userId: user._id }, { $set: miningUpdateFields }, { upsert: true })

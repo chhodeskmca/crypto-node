@@ -43,9 +43,9 @@ exports.getUserEarningsController = async (req, res) => {
 }
 
 // Controller for getting current hash rate
-exports.getCurrentHashRateController = async (req, res) => {
+exports.minePerMinuteController = async (req, res) => {
     try {
-        const result = await MiningServices.getCurrentHashRate(req)
+        const result = await MiningServices.minePerMinute(req)
         console.log(`Mining completed at ${moment().format('YYYY-MM-DD HH:mm:ss ZZ')}`)
         res.status(200).json(result)
     } catch (error) {

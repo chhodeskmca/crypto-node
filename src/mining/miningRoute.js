@@ -33,7 +33,7 @@ router.post(
 router.get(
     '/mining',
     authenticateToken,
-    MiningController.getCurrentHashRateController
+    MiningController.minePerMinuteController
 )
 
 module.exports = router
