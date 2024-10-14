@@ -42,6 +42,8 @@ class MiningUtils {
         return isNaN(teraHash) ? 0.00 : teraHash * 1000
     }
 
+
+
     /**
      * Adds the user's mining earnings for the current minute to the appropriate time interval arrays.
      * When an hour/day/week/month is completed, the sum is rolled up to the next interval.
@@ -51,7 +53,7 @@ class MiningUtils {
      */
     addMiningKaspaToUserArray(userArray, coins) {
         try {
-            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount } = userArray
+            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount, balance } = userArray
 
             // Update hour array with current minute's earnings
             this.updateArray(hour, coins, 60)
@@ -59,31 +61,34 @@ class MiningUtils {
 
             // If an hour is complete, move hourly total to day array
             let newHoursCount = hoursCount
+
             if (newMinsCount === 60) {
-                newMinsCount = 1
+                newMinsCount = 0
                 const hourTotal = this.sumArray(hour)
                 this.updateArray(day, hourTotal, 24)
                 newHoursCount += 1
             }
 
-            // If a day is complete, move daily total to week array
             let newDaysCount = daysCount
+
             if (newHoursCount === 24) {
-                newHoursCount = 1
+                newHoursCount = 0
                 const dayTotal = this.sumArray(day)
                 this.updateArray(week, dayTotal, 7)
                 newDaysCount += 1
             }
 
-            // If a week is complete, move weekly total to month array
             let newWeekCount = weekCount
             if (newDaysCount === 7) {
-                newDaysCount = 1
+                newDaysCount = 0
                 const weekTotal = this.sumArray(week)
-                this.updateArray(month, weekTotal, 4) // Assuming 4 weeks in a month (for simplification)
+                this.updateArray(month, weekTotal, 4)
                 newWeekCount += 1
             }
 
+            if (newWeekCount === 4) {
+                newWeekCount = 0
+            }
             // Return updated mining data
             return {
                 ...userArray,
@@ -141,46 +146,42 @@ class MiningUtils {
         }
     }
     /**
- * Sums the last N elements of an array.
- * @param {Array} arr - The array of numbers.
- * @param {number} count - The number of elements to sum from the end of the array.
- * @returns {number} - The sum of the last N elements.
- */
+    * Sums the last N elements of an array.
+    * @param {Array} arr - The array of numbers.
+    * @param {number} count - The number of elements to sum from the end of the array.
+    * @returns {number} - The sum of the last N elements.
+    */
     sumLastNElements = (arr, count) => {
         return arr?.slice(-count).reduce((acc, val) => acc + parseFloat(val), 0) || 0
     }
 
 
     /**
-   * Calculates real-time mining earnings by considering only the current active values in the hour, day, week, and month arrays.
-   * @param {Object} userArray - The user's mining data (hour, day, week, month, minsCount, hoursCount, etc.)
-   * @returns {Object} - Object with real-time earnings for hour, day, week, and month.
-   */
+    * Calculates real-time mining earnings by considering only the current active values in the hour, day, week, and month arrays.
+    * @param {Object} userArray - The user's mining data (hour, day, week, month, minsCount, hoursCount, etc.)
+    * @returns {Object} - Object with real-time earnings for hour, day, week, and month.
+    */
     calculateMiningEarnings = (userArray) => {
         try {
-            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount } = userArray
+            const { hour, day, week, month, minsCount, hoursCount, daysCount, weekCount } = userArray;
 
             const hourTotal = this.sumArray(hour) || 0
 
-            // Sum the last `hoursCount` elements in the day array plus the current hour total
-            const dayTotal = this.sumLastNElements(day, hoursCount) + this.sumLastNElements(hour, minsCount)
+            const dayTotal = day.length ? this.sumLastNElements(hour, minsCount) + this.sumArray(day) : this.sumArray(hour)
 
-            // Sum the last `daysCount` elements in the week array plus the current day total
-            const weekTotal = this.sumLastNElements(week, daysCount) + dayTotal
+            const weekTotal = week.length ? this.sumLastNElements(day, hoursCount) + this.sumArray(week) : dayTotal
 
-            // Sum the last `weekCount` elements in the month array plus the current week total
-            const monthTotal = this.sumLastNElements(month, weekCount) + weekTotal
+            const monthTotal = month.length ? this.sumArray(month) : weekTotal
 
-            // Return the real-time earnings for each interval
             return {
                 hour: parseFloat(hourTotal.toFixed(3)),
                 day: parseFloat(dayTotal.toFixed(3)),
                 week: parseFloat(weekTotal.toFixed(3)),
                 month: parseFloat(monthTotal.toFixed(3)),
-            }
+            };
         } catch (error) {
-            console.error('Error in calculateMiningEarnings:', error.message)
-            return { hour: 0, day: 0, week: 0, month: 0 }
+            console.error('Error in calculateMiningEarnings:', error.message);
+            return { hour: 0, day: 0, week: 0, month: 0 };
         }
     }
 
