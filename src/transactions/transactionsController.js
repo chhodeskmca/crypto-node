@@ -16,7 +16,7 @@ exports.createTransaction = async (req, res) => {
 // Get all transactions
 exports.getAllTransactions = async (req, res) => {
     try {
-        return await getAllTransactions();
+        return await getAllTransactions(req);
     } catch (error) {
         res.status(500).json(errorResponse(error.message));
     }

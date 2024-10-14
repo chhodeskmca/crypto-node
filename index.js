@@ -3,7 +3,9 @@ const cors = require('cors')
 const path = require('path')
 const cron = require('node-cron')
 require('dotenv').config()
-const connectDB = require('./config/db')
+const { connectDB } = require('./config/db')
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 // Import Routes
 const userRoutes = require('./src/users/userRoute')
@@ -18,6 +20,8 @@ const forgotPasswordRoutes = require('./src/forgotPassword/forgotPasswordRoute')
 const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRoutes')
 const MiningController = require('./src/mining/miningController')
 const MiningUtils = require('./utils/miningUtils')
+const User = require('./src/users/userModel')
+const { ROLE_TYPES } = require('./config')
 
 
 const app = express()
@@ -65,12 +69,30 @@ const setupCronJob = () => {
     console.log('Cron job started')
 }
 
+// async function get() {
+//     const users = await User.find({
+//         createdBy: new ObjectId('670761e7d43854c2441017c6'),
+//         roleType: 'USER'
+//     }).exec()
+//     console.log('users:', users)
+//     for (const user of users) {
 
+//         if (user.isAdmin) continue
+
+//         await User.updateOne(
+//             { _id: user._id },
+//             { $set: { origin: 'https://mrcryptomining.com' } },
+//             { upsert: true }
+//         )
+
+//     }
+// }
+// get()
 // Initialize the server setup
 const initializeServer = () => {
     setupMiddleware()
     setupRoutes()
-    setupCronJob()
+    // setupCronJob()
     startServer()
 }
 

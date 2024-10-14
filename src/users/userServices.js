@@ -10,13 +10,13 @@ const { successResponse } = require("../../utils/apiResponse")
 const { default: mongoose } = require("mongoose")
 const { customError } = require("../../utils/helper")
 const AdminAuthentication = require("../authentication/adminAuthenticationModel")
-const { mailSMTP } = require("../../config")
+const { mailSMTP, ROLE_TYPES } = require("../../config")
 const { ObjectId } = mongoose.Types
 
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, walletAddress, password, phoneNo = '' } = req.body
+    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
@@ -24,7 +24,7 @@ exports.createUser = async (req, res) => {
         return res.status(400).json({ error: 'The email address is already in use!!' })
 
     const existingUserByWalletAddress = await User.findOne({ walletAddress })
-    if (existingUserByWalletAddress)
+    if (existingUserByWalletAddress && !isAdmin && roleType === ROLE_TYPES.USER)
         return res.status(400).json({ error: 'The wallet address is already in use!!' })
 
 
@@ -45,30 +45,35 @@ exports.createUser = async (req, res) => {
         minPayoutAmount,
         orderedHashrate: 0,
         electricitySpendings: 0,
+        roleType,
+        isAdmin,
+        createdBy
     })
     await user.save()
 
-    // Create mining record for the user
-    const mining = new Mining({
-        userId: user._id,
-        hour: [],
-        day: [],
-        week: [],
-        month: [],
-    })
-    await mining.save()
+    if (!isAdmin) {
+        // Create mining record for the user
+        const mining = new Mining({
+            userId: user._id,
+            hour: [],
+            day: [],
+            week: [],
+            month: [],
+        })
+        await mining.save()
 
-    // Create mining record for the user
-    const balance = new Balance({
-        userId: user._id,
-        balance: 0,
-        kaspa: 0,
-        electricity: 0,
-        payoutRequest: 0,
-    })
-    await balance.save()
+        // Create mining record for the user
+        const balance = new Balance({
+            userId: user._id,
+            balance: 0,
+            kaspa: 0,
+            electricity: 0,
+            payoutRequest: 0,
+        })
+        await balance.save()
+    }
 
-    return res.status(200).json({ message: 'User created successfully.', status: true })
+    return res.status(200).json({ message: `${isAdmin ? 'Admin' : 'User'} created successfully.`, status: true })
 }
 
 // Service function for logging in
@@ -146,16 +151,34 @@ exports.login = async (req, res) => {
 }
 
 // Service function for getting all users
-exports.getAllUsers = async () => {
-    const users = await User.aggregate([
-        {
-            $match: {
+exports.getAllUsers = async (req) => {
+    const userId = req.userId
+
+    const getRoleType = await User.findOne({ _id: new ObjectId(userId) })
+    const roleType = getRoleType.roleType
+
+
+    const matchConditions = {
+        $and: [
+            {
                 $or: [
                     { isAdmin: false },
                     { isAdmin: "0" },
                     { isAdmin: { $exists: false } }
                 ]
-            }
+            },
+            { roleType: ROLE_TYPES.USER }
+        ]
+    }
+
+
+    if (roleType === ROLE_TYPES.ADMIN) {
+        matchConditions.$and.push({ createdBy: new ObjectId(userId) })
+    }
+
+    const users = await User.aggregate([
+        {
+            $match: matchConditions
         },
         {
             $lookup: {
@@ -187,6 +210,46 @@ exports.getAllUsers = async () => {
     ])
     return successResponse(users, 'Users get successfully')
 }
+
+// Service function for getting all users
+exports.fetchAdminUsersByParentId = async (req) => {
+    const { id } = req.params
+
+    const users = await User.aggregate([
+        {
+            $match: {
+                isAdmin: true,
+                roleType: ROLE_TYPES.ADMIN,
+                createdBy: new ObjectId(id)
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: 'createdBy',
+                as: 'createdUsers'
+            }
+        },
+        {
+            $project: {
+                createdUsersCount: { $size: "$createdUsers" },
+                name: 1,
+                email: 1,
+                phoneNo: 1,
+                walletAddress: 1,
+                minPayoutAmount: 1,
+                orderedHashrate: 1,
+                electricitySpendings: 1,
+                miningData: 1,
+                created_at: 1,
+                createdAt: 1,
+            },
+        }
+    ])
+    return successResponse(users, 'Admin get successfully')
+}
+
 
 // Service function for getting user info
 exports.getMinPayoutAmount = async (req, res) => {

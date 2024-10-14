@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { ROLE_TYPES } = require('../../config');
 
 const userSchema = new mongoose.Schema({
     name: String,
@@ -9,9 +10,20 @@ const userSchema = new mongoose.Schema({
     orderedHashrate: Number,
     electricitySpendings: Number,
     minPayoutAmount: Number,
+    parent_id: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    roleType: {
+        type: String,
+        enum: ROLE_TYPES,
+        required: true
+    },
     walletAddress: String,
     created_at: Date,
     updated_at: Date,
+    origin: {
+        type: String,
+        default: null
+    }
 }, {
     timestamps: true,
 });

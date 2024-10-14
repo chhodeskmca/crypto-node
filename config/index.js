@@ -21,6 +21,22 @@ mailSMTP.verify((error, success) => {
 })
 
 
+const ROLE_TYPES = {
+    'SUPER_ADMIN': 'SUPER_ADMIN',
+    'ADMIN': 'ADMIN',
+    'USER': 'USER'
+}
+
+
+const WEB_DOMAINS = {
+    'localhost': ROLE_TYPES.SUPER_ADMIN,
+    'mrcryptomining': ROLE_TYPES.SUPER_ADMIN,
+    'coinpromining': ROLE_TYPES.ADMIN,
+    'm2xcrypto': ROLE_TYPES.ADMIN
+}
+
 module.exports = {
     mailSMTP,
+    ROLE_TYPES,
+    WEB_DOMAINS
 }

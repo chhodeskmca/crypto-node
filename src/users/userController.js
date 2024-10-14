@@ -29,12 +29,24 @@ exports.loginController = async (req, res) => {
 // Controller for getting all users
 exports.getAllUsersController = async (req, res) => {
     try {
-        const users = await UserServices.getAllUsers()
+        const users = await UserServices.getAllUsers(req)
         res.status(200).json(users)
     } catch (error) {
         res.status(500).json({ error: error.message })
     }
 }
+
+
+// Controller for getting all users
+exports.fetchAdminUsersByParentIdController = async (req, res) => {
+    try {
+        const users = await UserServices.fetchAdminUsersByParentId(req)
+        res.status(200).json(users)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
 
 // Controller for getting a single user info
 exports.getUserInfoController = async (req, res) => {
@@ -55,7 +67,7 @@ exports.updateUserController = async (req, res) => {
     try {
         const userId = req.params.userId
         const updatedUser = await UserServices.updateUser(req.body, userId)
-        res.status(200).json({ message: 'User updated successfully.', user: updatedUser, status: true })
+        res.status(200).json({ message: `${req.body.isAdmin ? 'Admin' : 'User'} updated successfully.`, user: updatedUser, status: true })
     } catch (error) {
         res.status(500).json({ error: error.message })
     }

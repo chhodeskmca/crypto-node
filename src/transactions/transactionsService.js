@@ -2,6 +2,8 @@ const Transaction = require('./transactionsModel');
 const Balance = require('../balance/balanceModel');
 const PayoutRequest = require('../payout/request/payoutRequestModel');
 const { successResponse, errorResponse } = require('../../utils/apiResponse');
+const { ObjectId } = require('../../config/db');
+const { ROLE_TYPES } = require('../../config');
 
 // Create a new transaction
 exports.createTransaction = async ({ userId, amount }) => {
@@ -42,9 +44,10 @@ exports.createTransaction = async ({ userId, amount }) => {
 };
 
 // Get all transactions
-exports.getAllTransactions = async () => {
+exports.getAllTransactions = async (req) => {
+
     try {
-        const transactions = await Transaction.aggregate([
+        const aggregation = [
             {
                 $lookup: {
                     from: 'users',
@@ -59,6 +62,19 @@ exports.getAllTransactions = async () => {
                     preserveNullAndEmptyArrays: true
                 }
             },
+        ]
+
+        if (req.accessType === ROLE_TYPES.ADMIN) {
+            aggregation.push(
+                {
+                    $match: {
+                        'get_user.createdBy': new ObjectId(req.userId)
+                    }
+                }
+            )
+        }
+        const transactions = await Transaction.aggregate([
+            ...aggregation,
             {
                 $sort: {
                     createdAt: -1
@@ -67,9 +83,9 @@ exports.getAllTransactions = async () => {
         ])
 
         if (transactions.length > 0) {
-            return successResponse(transactions);
+            return successResponse(transactions)
         } else {
-            throw new Error('No transactions found');
+            throw new Error('No transactions found')
         }
     } catch (error) {
         throw new Error(error.message);

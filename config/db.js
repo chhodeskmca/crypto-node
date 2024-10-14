@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-
+const { ObjectId } = mongoose.Types;
 dotenv.config();
 
 const connectDB = async () => {
@@ -14,4 +14,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB;
+module.exports = { connectDB, ObjectId };

@@ -16,6 +16,13 @@ router.get(
     UserController.getAllUsersController
 )
 
+// Protected Routes
+router.get(
+    '/admins/:id',
+    authenticateToken,
+    UserController.fetchAdminUsersByParentIdController
+)
+
 router.post(
     '/user/create',
     // authenticateToken,
