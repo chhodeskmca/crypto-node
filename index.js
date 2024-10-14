@@ -92,7 +92,7 @@ const setupCronJob = () => {
 const initializeServer = () => {
     setupMiddleware()
     setupRoutes()
-    // setupCronJob()
+    setupCronJob()
     startServer()
 }
 
