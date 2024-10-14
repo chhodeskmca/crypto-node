@@ -5,9 +5,13 @@ const authenticateToken = require('../../middleware/authMiddleware')
 
 // Import validation rules from the validators directory
 const Validations = require('../../validators/userValidator')
+const originCheckMiddleware = require('../../middleware/originCheckMiddleware')
 
 // Public Routes
-router.post('/login', UserController.loginController)
+router.post(
+    '/login',
+    originCheckMiddleware,
+    UserController.loginController)
 
 // Protected Routes
 router.get(
@@ -25,7 +29,7 @@ router.get(
 
 router.post(
     '/user/create',
-    // authenticateToken,
+    authenticateToken,
     Validations.createUserValidation, UserController.createUserController
 )
 

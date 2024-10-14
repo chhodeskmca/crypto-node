@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { createOrUpdateForgotPasswordEntry, resetPassword } = require('./forgotPasswordController');
+const originCheckMiddleware = require('../../middleware/originCheckMiddleware');
 
 /* Public routes */
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', originCheckMiddleware, async (req, res) => {
     try {
         await createOrUpdateForgotPasswordEntry(req, res);
     } catch (error) {
@@ -11,7 +12,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', originCheckMiddleware, async (req, res) => {
     try {
         await resetPassword(req, res);
     } catch (error) {

@@ -22,13 +22,9 @@ const authenticateToken = async (req, res, next) => {
         req.userId = decoded.id
 
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
-        console.log('domain:', domain)
         const user = await User.findOne({ _id: new ObjectId(decoded.id) })
-        console.log('user:', user)
 
-        console.log('domain !== WEB_DOMAINS.localhost:', domain !== WEB_DOMAINS.localhost)
         if (domain !== WEB_DOMAINS.localhost) {
-            console.log('!user.origin.includes(domain):', !user.origin.includes(domain))
             if (!user.origin.includes(domain) || !user) {
                 return res.status(401).json({ error: 'Access denied. Invalid credentials' })
             }
