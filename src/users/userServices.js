@@ -244,6 +244,9 @@ exports.fetchAdminUsersByParentId = async (req) => {
                 miningData: 1,
                 created_at: 1,
                 createdAt: 1,
+                origin: 1,
+                isAdmin: 1,
+                roleType: 1
             },
         }
     ])
