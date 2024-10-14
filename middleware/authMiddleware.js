@@ -23,7 +23,7 @@ const authenticateToken = async (req, res, next) => {
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
         const user = await User.findById(decoded.id)
 
-        if (!domain == WEB_DOMAINS.localhost) {
+        if (domain !== WEB_DOMAINS.localhost) {
             if (!user.origin.includes(domain) || !user) {
                 return res.status(401).json({ error: 'Access denied. Invalid credentials' })
             }
