@@ -1,25 +1,25 @@
 const express = require('express')
 const router = express.Router()
-const MiningController = require('./miningController')
+const DefaultMiningController = require('./defaultMiningController');
 const authenticateToken = require('../../middleware/authMiddleware')
 
 // Import validation rules from the validators directory
 const Validator = require('../../validators/miningValidator')
 
-
-// Get User Earnings
-router.post(
-    '/user/earning',
+// Update Default Mining
+router.put(
+    '/default-mining',
     authenticateToken,
-    Validator.getUserEarningsValidation,
-    MiningController.getUserEarningsController
+    Validator.updateDefaultMiningValidation,
+    DefaultMiningController.updateDefaultMining
 )
 
-// Get Current Hash Rate
+// Get Default Mining
 router.get(
-    '/mining',
+    '/default-mining',
     authenticateToken,
-    MiningController.minePerMinuteController
+    DefaultMiningController.getDefaultMining
 )
+
 
 module.exports = router

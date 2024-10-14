@@ -1,5 +1,5 @@
 const axios = require('axios')
-const DefaultMining = require('../src/mining/defaultMiningModel') // Assuming you have a DefaultMining model
+const DefaultMining = require('../src/default-mining/defaultMiningModel') // Assuming you have a DefaultMining model
 const moment = require('moment')
 class MiningUtils {
     constructor() {
@@ -109,9 +109,9 @@ class MiningUtils {
 
             const hourTotal = this.sumArray(hour) || 0
 
-            const dayTotal = getLast24HoursEarnings(earnings, kaspaBalance)
-            const weekTotal = getLast7DaysEarnings(earnings, kaspaBalance)
-            const monthTotal = getLast30DaysEarnings(earnings, kaspaBalance)
+            const dayTotal = getLast24HoursEarnings(earnings, hour, minsCount)
+            const weekTotal = getLast7DaysEarnings(earnings, hour, minsCount)
+            const monthTotal = getLast30DaysEarnings(earnings, hour, minsCount)
 
             return {
                 hour: parseFloat(hourTotal.toFixed(6)),
@@ -199,23 +199,25 @@ function sumExtraMinutes(hourArray, minutesCount) {
 }
 
 
-function getLast24HoursEarnings(earnings, kaspaBalance) {
+function getLast24HoursEarnings(earnings, hour, minsCount, kaspaBalance) {
     const day = 24
-    const last23HoursEarnings = sumLastXHours(earnings, day)
-    // const extraMinutesEarnings = sumExtraMinutes(hourEarnings, minsCount)
-    return earnings.length < day ? kaspaBalance : last23HoursEarnings
+    const last24HoursEarnings = sumLastXHours(earnings, day)
+    const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
+    return earnings.length < day ? last24HoursEarnings + extraMinutesEarnings : last24HoursEarnings
 }
 
 
-function getLast7DaysEarnings(earnings, kaspaBalance) {
+function getLast7DaysEarnings(earnings, hour, minsCount) {
     const week = 168
-    const last167HoursEarnings = sumLastXHours(earnings, 168)
-    return earnings.length < week ? kaspaBalance : last167HoursEarnings
+    const last168HoursEarnings = sumLastXHours(earnings, 168)
+    const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
+    return earnings.length < week ? last168HoursEarnings + extraMinutesEarnings : last168HoursEarnings
 }
 
 
-function getLast30DaysEarnings(earnings, kaspaBalance) {
+function getLast30DaysEarnings(earnings, hour, minsCount) {
     const month = 720
-    const last719HoursEarnings = sumLastXHours(earnings, month)
-    return earnings.length < month ? kaspaBalance : last719HoursEarnings
+    const last720HoursEarnings = sumLastXHours(earnings, month)
+    const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
+    return earnings.length < month ? last720HoursEarnings + extraMinutesEarnings : last720HoursEarnings
 }
