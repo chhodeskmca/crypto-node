@@ -24,6 +24,7 @@ const originCheckMiddleware = async (req, res, next) => {
 
         next()
     } catch (error) {
+        console.log('error:', error)
         res.status(401).json({ error: 'Invalid token.' })
     }
 }

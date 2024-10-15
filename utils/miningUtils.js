@@ -109,9 +109,9 @@ class MiningUtils {
 
             const hourTotal = this.sumArray(hour) || 0
 
-            const dayTotal = getLast24HoursEarnings(earnings, hour, minsCount)
-            const weekTotal = getLast7DaysEarnings(earnings, hour, minsCount)
-            const monthTotal = getLast30DaysEarnings(earnings, hour, minsCount)
+            const dayTotal = getLast24HoursEarnings(earnings, hour, minsCount, kaspaBalance)
+            const weekTotal = getLast7DaysEarnings(earnings, hour, minsCount, kaspaBalance)
+            const monthTotal = getLast30DaysEarnings(earnings, hour, minsCount, kaspaBalance)
 
             return {
                 hour: parseFloat(hourTotal.toFixed(6)),
@@ -203,21 +203,21 @@ function getLast24HoursEarnings(earnings, hour, minsCount, kaspaBalance) {
     const day = 24
     const last24HoursEarnings = sumLastXHours(earnings, day)
     const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
-    return earnings.length < day ? last24HoursEarnings + extraMinutesEarnings : last24HoursEarnings
+    return earnings.length < day ? kaspaBalance : last24HoursEarnings
 }
 
 
-function getLast7DaysEarnings(earnings, hour, minsCount) {
+function getLast7DaysEarnings(earnings, hour, minsCount, kaspaBalance) {
     const week = 168
     const last168HoursEarnings = sumLastXHours(earnings, 168)
     const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
-    return earnings.length < week ? last168HoursEarnings + extraMinutesEarnings : last168HoursEarnings
+    return earnings.length < week ? kaspaBalance : last168HoursEarnings
 }
 
 
-function getLast30DaysEarnings(earnings, hour, minsCount) {
+function getLast30DaysEarnings(earnings, hour, minsCount, kaspaBalance) {
     const month = 720
     const last720HoursEarnings = sumLastXHours(earnings, month)
     const extraMinutesEarnings = sumExtraMinutes(hour, minsCount)
-    return earnings.length < month ? last720HoursEarnings + extraMinutesEarnings : last720HoursEarnings
+    return earnings.length < month ? kaspaBalance : last720HoursEarnings
 }

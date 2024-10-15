@@ -22,7 +22,7 @@ exports.storeOrUpdate = async (req, res) => {
         // Prepare file path if image is uploaded
         let imagePath = '';
         if (req.file) {
-            imagePath = 'notifications/' + req.file.filename;
+            imagePath = 'images/notifications/' + req.file.filename;
         }
 
         // Check if there's at least one record in the database

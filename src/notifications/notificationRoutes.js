@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure the directory exists
-const uploadDir = 'public/notifications';
+const uploadDir = 'public/images/notifications';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
