@@ -11,7 +11,11 @@ const originCheckMiddleware = async (req, res, next) => {
 
 
         if (domain !== 'localhost') {
-            if (!user.origin.includes(domain) || !user) {
+            if (!user) {
+                return res.status(401).json({ error: 'Invalid credentials' })
+            }
+
+            else if (!user?.origin?.includes(domain)) {
                 return res.status(401).json({ error: 'Access denied. Invalid credentials' })
             }
         }
@@ -25,7 +29,7 @@ const originCheckMiddleware = async (req, res, next) => {
         next()
     } catch (error) {
         console.log('error:', error)
-        res.status(401).json({ error: 'Invalid token.' })
+        res.status(401).json({ error: 'Access denied. Invalid credentials!!' })
     }
 }
 
