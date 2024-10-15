@@ -130,9 +130,9 @@ class MiningUtils {
     async getDefaultMiningData(orderedHashRate) {
 
         try {
-            const defaultMining = await DefaultMining.findById(this.defaultMiningId)
-            const minimum = defaultMining ? defaultMining.minimum : 23
-            const maximum = defaultMining ? defaultMining.maximum : 27
+            const defaultMining = await DefaultMining.findOne().exec()
+            const minimum = defaultMining ? defaultMining.minimum : 11
+            const maximum = defaultMining ? defaultMining.maximum : 17
 
             const kaspa = (Math.random() * (maximum - minimum) + minimum) / 24 / 60
             const currentPrice = (await this.getCurrentKaspaPrice()).price
@@ -145,7 +145,7 @@ class MiningUtils {
 
         } catch (error) {
             console.error('Error fetching default mining data:', error.message)
-            const minimum = 10
+            const minimum = 11
             const maximum = 17
 
             const kaspa = (Math.random() * (maximum - minimum) + minimum) / 24 / 60
