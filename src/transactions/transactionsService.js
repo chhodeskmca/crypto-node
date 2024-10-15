@@ -45,6 +45,8 @@ exports.createTransaction = async ({ userId, amount }) => {
 
 // Get all transactions
 exports.getAllTransactions = async (req) => {
+    const userId = req.userId
+    const accessType = req.accessType
 
     try {
         const aggregation = [
@@ -64,11 +66,11 @@ exports.getAllTransactions = async (req) => {
             },
         ]
 
-        if (req.accessType === ROLE_TYPES.ADMIN) {
+        if (accessType === ROLE_TYPES.ADMIN) {
             aggregation.push(
                 {
                     $match: {
-                        'get_user.createdBy': new ObjectId(req.userId)
+                        'get_user.createdBy': new ObjectId(userId)
                     }
                 }
             )

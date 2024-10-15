@@ -38,10 +38,10 @@ exports.createPayoutRequestController = async (req, res) => {
 // Controller for getting all payout requests
 exports.getAllPayoutRequestsController = async (req, res) => {
     try {
-        const requests = await PayoutServices.getAllPayoutRequests();
+        const requests = await PayoutServices.getAllPayoutRequests(req)
         return res.json(successResponse(requests));
     } catch (error) {
-        return res.status(500).json(errorResponse('Internal server error'));
+        return res.status(error.statusCode || 500).json(errorResponse(error.message || 'Internal server error'));
     }
 };
 

@@ -5,6 +5,8 @@ const Balance = require('../../balance/balanceModel');
 const { sendPayoutRequestMail } = require('../../../utils/emailService');
 const MiningUtils = require('../../../utils/miningUtils')
 const mongoose = require('mongoose');
+const { customError } = require('../../../utils/helper');
+const { ROLE_TYPES } = require('../../../config');
 const { ObjectId } = mongoose.Types;
 
 // Instantiate the Mining class
@@ -100,50 +102,63 @@ exports.createPayoutRequestFromBalance = async () => {
 };
 
 // Service function for getting all pending payout requests
-exports.getAllPayoutRequests = async () => {
+exports.getAllPayoutRequests = async (req) => {
+    const userId = req.userId
+    const accessType = req.accessType
+
+    let aggregation = [
+        {
+            $match: {
+                status: 'pending'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'get_user',
+            },
+        },
+        {
+            $lookup: {
+                from: 'balances',
+                localField: 'userId',
+                foreignField: 'userId',
+                as: 'get_user_balance',
+            },
+        },
+        {
+            $unwind: {
+                path: '$get_user',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: '$get_user_balance',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $match: {
+                'get_user.createdBy': new ObjectId(userId)
+            }
+        }
+    ]
+
+    if (accessType === ROLE_TYPES.SUPER_ADMIN) {
+        aggregation.pop()
+    }
+
     try {
-        const requests = await PayoutRequest
-            .aggregate([
-                {
-                    $match: {
-                        status: 'pending'
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'userId',
-                        foreignField: '_id',
-                        as: 'get_user',
-                    },
-                },
-                {
-                    $lookup: {
-                        from: 'balances',
-                        localField: 'userId',
-                        foreignField: 'userId',
-                        as: 'get_user_balance',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$get_user',
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
-                    $unwind: {
-                        path: '$get_user_balance',
-                        preserveNullAndEmptyArrays: true
-                    }
-                }
-            ])
+        const requests = await PayoutRequest.aggregate([...aggregation])
 
         if (!requests.length) {
-            throw new Error('No data found');
+            throw customError({ code: 404, message: 'No data found' })
         }
 
-        const earningPerMinute = await miningInstance.fetchPerMinuteKaspaMining(1);
+        const earningPerMinute = await miningInstance.getCurrentKaspaPrice();
 
         const updatedRequests = requests.map(request => ({
             ...request,
@@ -152,6 +167,7 @@ exports.getAllPayoutRequests = async () => {
 
         return updatedRequests;
     } catch (error) {
-        throw new Error('Error fetching payout requests');
+        console.log('error:', error)
+        throw error
     }
 };
