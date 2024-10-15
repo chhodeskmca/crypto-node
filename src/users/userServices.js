@@ -47,6 +47,7 @@ exports.createUser = async (req, res) => {
         electricitySpendings: 0,
         roleType,
         isAdmin,
+        origin,
         createdBy
     })
     await user.save()

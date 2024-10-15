@@ -6,7 +6,7 @@ const originCheckMiddleware = async (req, res, next) => {
 
     try {
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
-        console.log('domain:', domain)
+
         const user = await User.findOne({ email: req.body.email })
 
 
