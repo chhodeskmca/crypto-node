@@ -16,7 +16,7 @@ const { ObjectId } = mongoose.Types
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy } = req.body
+    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
