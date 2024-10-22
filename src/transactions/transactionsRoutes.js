@@ -5,7 +5,7 @@ const authenticateToken = require('../../middleware/authMiddleware');
 const { body, validationResult } = require('express-validator');
 
 /* Create a new transaction */
-router.post('/transaction/create',
+router.post('/create/transaction',
     authenticateToken, // Protect the route
     body('userId').isString().withMessage('User ID is required'),
     body('amount').isFloat({ gt: 0 }).withMessage('Amount must be a positive number'),
