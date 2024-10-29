@@ -26,9 +26,9 @@ const app = express()
 const setupMiddleware = () => {
     app.use(express.json())
     app.use(cors({
-         origin: (origin, callback) => {
-        callback(null, true); // Allow all origins
-    },
+        origin: (origin, callback) => {
+            callback(null, true); // Allow all origins
+        },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
     }))
@@ -71,7 +71,9 @@ const setupCronJob = () => {
 const initializeServer = () => {
     setupMiddleware()
     setupRoutes()
-    setupCronJob()
+    if (process.env.NODE_ENV === "PROD") {
+        setupCronJob()
+    }
     startServer()
 }
 
