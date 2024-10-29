@@ -26,7 +26,9 @@ const app = express()
 const setupMiddleware = () => {
     app.use(express.json())
     app.use(cors({
-        origin: '*',
+         origin: (origin, callback) => {
+        callback(null, true); // Allow all origins
+    },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
     }))
