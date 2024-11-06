@@ -83,7 +83,7 @@ exports.login = async (req, res) => {
 
         const { email, password, type } = req.body
         // Check if user exists
-        const user = await User.findOne({ email })
+        const user = await User.findOne({ email: { $regex: new RegExp('^' + email + '$', 'i') } })
         if (!user) {
             throw customError({ code: 404, message: 'Email not found!' })
         }
