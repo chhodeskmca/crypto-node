@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     orderedHashrate: Number,
     electricitySpendings: Number,
     minPayoutAmount: Number,
+    electricityExchange: Number,
     parent_id: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     roleType: {

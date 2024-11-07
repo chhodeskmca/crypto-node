@@ -9,6 +9,10 @@ const defaultMiningSchema = new mongoose.Schema({
     maximum: {
         type: Number,
         required: true
+    },
+    electricityExchange: {
+        type: Number,
+        required: true
     }
 }, {
     timestamps: true // Automatically adds created_at and updated_at fields

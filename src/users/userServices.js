@@ -16,7 +16,7 @@ const { ObjectId } = mongoose.Types
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin } = req.body
+    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin, electricityExchange } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
@@ -48,7 +48,8 @@ exports.createUser = async (req, res) => {
         roleType,
         isAdmin,
         origin,
-        createdBy
+        createdBy,
+        electricityExchange
     })
     await user.save()
 
@@ -198,6 +199,7 @@ exports.getAllUsers = async (req) => {
                 minPayoutAmount: 1,
                 orderedHashrate: 1,
                 electricitySpendings: 1,
+                electricityExchange: 1,
                 miningData: 1,
                 created_at: 1,
                 createdAt: 1,
@@ -329,13 +331,14 @@ exports.getUserInfo = async (req, res) => {
     ])
 
     if (!user.length) throw new Error('User not found')
+    console.log('user:', user)
 
     return res.status(200).json({ status: true, data: user[0] })
 }
 
 // Service function for updating a user
 exports.updateUser = async (userData, userId) => {
-    const { name, email, walletAddress, phoneNo } = userData
+    const { name, email, walletAddress, phoneNo, electricityExchange } = userData
     const user = await User.findById(userId)
     if (!user) throw new Error('User not found')
 
@@ -343,7 +346,7 @@ exports.updateUser = async (userData, userId) => {
     user.email = email
     user.walletAddress = walletAddress
     user.phoneNo = phoneNo
-    console.log('user:', user)
+    user.electricityExchange = electricityExchange
     await user.save()
 
     return user
@@ -427,7 +430,6 @@ exports.adminTwoFactorAuthentication = async (req, res) => {
 
         // Find the OTP record in the database
         const adminAuthentication = await AdminAuthentication.findOne({ otp })
-        console.log('adminAuthentication:', adminAuthentication)
         if (!adminAuthentication) {
             return res.status(404).json({ message: 'Invalid OTP', status: false })
         }

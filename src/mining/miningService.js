@@ -6,6 +6,7 @@ const MiningUtils = require('../../utils/miningUtils')
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const { successResponse, errorResponse } = require('../../utils/apiResponse')
+const DefaultMining = require('../default-mining/defaultMiningModel')
 
 const miningInstance = new MiningUtils()
 
@@ -73,6 +74,7 @@ exports.getUserEarnings = async (req) => {
     const user = users[0]
     const kaspa = convertStringToNumber(user.userBalance?.kaspa) || 0
     const minPayout = await PayoutSetting.findOne()
+    const electricityExchange = await DefaultMining.findOne()
     const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
     const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining, kaspa)
 
@@ -85,6 +87,7 @@ exports.getUserEarnings = async (req) => {
         currentDollarPrice: response.price,
         orderedHashRate: convertStringToNumber(user?.orderedHashrate) || 0,
         electricitySpendings: convertStringToNumber(user.userBalance?.electricity) || 0,
+        electricityExchange: user?.electricityExchange || electricityExchange?.electricityExchange,
         ...calculateMiningResponse
     }
 
