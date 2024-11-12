@@ -6,6 +6,11 @@ const machineSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    coinId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Coin',
+        required: true
+    },
     websiteUrl: {
         type: String,
         required: true
@@ -41,6 +46,11 @@ const assignedMachineSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+        required: true
+    },
+    coinId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Coin',
         required: true
     },
     machineId: {

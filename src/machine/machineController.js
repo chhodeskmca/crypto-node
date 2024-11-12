@@ -11,7 +11,7 @@ const { validationResult } = require('express-validator')
 // Controller for getting all machines
 exports.getAllMachinesController = async (req, res) => {
     try {
-        const result = await getAllMachines()
+        const result = await getAllMachines(req)
         res.status(200).json(result)
     } catch (error) {
         res.status(404).json({ status: false, message: error.message })
@@ -26,7 +26,7 @@ exports.createMachineController = async (req, res) => {
     }
 
     try {
-        const result = await createMachine(req.body, req.file)
+        const result = await createMachine(req, req.file)
         res.status(201).json(result)
     } catch (error) {
         res.status(500).json({ status: false, message: error.message })

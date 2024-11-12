@@ -2,8 +2,9 @@ const { Machine, AssignedMachine } = require('./machineModel')
 const User = require('../users/userModel')
 
 // Service function for getting all machines
-exports.getAllMachines = async () => {
-    const machines = await Machine.find().sort({ created_at: -1 })
+exports.getAllMachines = async (req) => {
+    const coinId = req.coinId
+    const machines = await Machine.find({ coinId }).sort({ created_at: -1 })
 
     if (machines.length === 0) {
         throw new Error('No machines found')
@@ -13,11 +14,13 @@ exports.getAllMachines = async () => {
 }
 
 // Service function for creating a machine
-exports.createMachine = async (machineData, file) => {
-    const { name, websiteUrl, specHashrate, specElectricitySpending } = machineData
+exports.createMachine = async (req, file) => {
+    const coinId = req.coinId
+    const { name, websiteUrl, specHashrate, specElectricitySpending } = req.body
 
     const machine = new Machine({
         name,
+        coinId,
         websiteUrl,
         performance: '100',
         specHashrate,

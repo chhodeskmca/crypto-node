@@ -17,6 +17,7 @@ const notificationRoutes = require('./src/notifications/notificationRoutes')
 const transactionsRoutes = require('./src/transactions/transactionsRoutes')
 const forgotPasswordRoutes = require('./src/forgotPassword/forgotPasswordRoute')
 const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRoutes')
+const coinRoutes = require('./src/coins/coinRoute')
 const MiningController = require('./src/mining/miningController')
 
 
@@ -47,6 +48,7 @@ const setupRoutes = () => {
     app.use('/api', payoutRoutes)
     app.use('/api', settingsRoute)
     app.use('/api', transactionsRoutes)
+    app.use('/api', coinRoutes)
 }
 
 // Start the server and connect to the database

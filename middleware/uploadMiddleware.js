@@ -1,10 +1,23 @@
 const multer = require('multer')
 const path = require('path')
+const fs = require('fs')
+
+// Function to ensure folder exists
+const ensureDirectoryExistence = (dirPath) => {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true })
+    }
+}
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/images') // Specify the directory for file upload
+        const folderType = req.body.folderType || ''
+        const dir = `public/images/${folderType}`
+
+        // Ensure the target folder exists
+        ensureDirectoryExistence(dir)
+        cb(null, dir)
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname)

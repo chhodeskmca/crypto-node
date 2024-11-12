@@ -6,7 +6,9 @@ require('dotenv').config();
 
 const authenticateToken = async (req, res, next) => {
 
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers['authorization']
+    const coinId = req.headers['coin-id']
+
     if (!authHeader) {
         return res.status(401).json({ error: 'Access denied. No token provided.' })
     }
@@ -20,6 +22,7 @@ const authenticateToken = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         req.user = decoded
         req.userId = decoded.id
+        req.coinId = new ObjectId(coinId)
 
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
         const user = await User.findOne({ _id: new ObjectId(decoded.id) })
