@@ -30,7 +30,7 @@ router.get(
 router.post(
     '/user/create',
     authenticateToken,
-    Validations.createUserValidation, UserController.createUserController
+    UserController.createUserController
 )
 
 router.get(

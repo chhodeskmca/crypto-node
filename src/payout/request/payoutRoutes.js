@@ -11,11 +11,12 @@ const { body, validationResult } = require('express-validator')
 const authenticateToken = require('../../../middleware/authMiddleware')
 
 // Fetch payout settings
-router.get('/payout/settings', getPayoutSettingsController)
+router.get('/payout/settings', authenticateToken, getPayoutSettingsController)
 
 // Update payout settings
 router.post(
     '/payout/settings',
+    authenticateToken,
     body('minimumBalance').isFloat().withMessage('Minimum balance must be a number'),
     updatePayoutSettingsController
 )
@@ -23,6 +24,7 @@ router.post(
 // Create payout request
 router.post(
     '/payout/request',
+    authenticateToken,
     createPayoutRequestController
 )
 

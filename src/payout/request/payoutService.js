@@ -13,19 +13,19 @@ const { ObjectId } = mongoose.Types;
 const miningInstance = new MiningUtils();
 
 // Service function for fetching payout settings
-exports.getPayoutSettings = async () => {
+exports.getPayoutSettings = async (coinId) => {
     try {
-        return await PayoutSetting.findOne();
+        return await PayoutSetting.findOne({ coinId });
     } catch (error) {
         throw new Error('Error fetching payout settings');
     }
 };
 
 // Service function for updating payout settings
-exports.updatePayoutSettings = async (minimumBalance) => {
+exports.updatePayoutSettings = async (minimumBalance, coinId) => {
     try {
         const payoutSetting = await PayoutSetting.findOneAndUpdate(
-            {},
+            { coinId },
             { minimumBalance },
             { new: true, upsert: true }
         );
@@ -36,9 +36,9 @@ exports.updatePayoutSettings = async (minimumBalance) => {
 };
 
 // Service function for creating a payout request
-exports.createPayoutRequest = async (userId) => {
+exports.createPayoutRequest = async (userId, coinId) => {
     try {
-        const existingRequest = await PayoutRequest.findOne({ userId: userId, status: 'pending' });
+        const existingRequest = await PayoutRequest.findOne({ userId, coinId, status: 'pending' });
         if (existingRequest) {
             throw new Error('You have already requested a payout');
         }
@@ -70,9 +70,10 @@ exports.createPayoutRequest = async (userId) => {
 };
 
 // Service function for creating payout requests based on user balance
-exports.createPayoutRequestFromBalance = async () => {
+exports.createPayoutRequestFromBalance = async (req) => {
     try {
-        let isAnyPayoutRequest = false;
+        const coinId = req.coinId
+        let isAnyPayoutRequest = false
         const payoutSetting = await PayoutSetting.findOne().lean();
         const adminMinimumBalance = payoutSetting ? payoutSetting.minimumBalance : 0;
 
@@ -86,7 +87,7 @@ exports.createPayoutRequestFromBalance = async () => {
 
             if (!existingRequest && validRequest) {
                 isAnyPayoutRequest = true;
-                await PayoutRequest.create({ userId });
+                await PayoutRequest.create({ userId, coinId: new ObjectId(coinId) });
             }
         }
 
@@ -104,12 +105,14 @@ exports.createPayoutRequestFromBalance = async () => {
 // Service function for getting all pending payout requests
 exports.getAllPayoutRequests = async (req) => {
     const userId = req.userId
+    const coinId = req.coinId
     const accessType = req.accessType
 
     let aggregation = [
         {
             $match: {
-                status: 'pending'
+                status: 'pending',
+                coinId: coinId
             }
         },
         {
