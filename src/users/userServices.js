@@ -16,21 +16,12 @@ const { ObjectId } = mongoose.Types
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin, electricityExchange } = req.body
+    const { name, email, password, phoneNo = '', roleType, isAdmin, createdBy, origin } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
     if (existingUserByEmail)
         return res.status(400).json({ error: 'The email address is already in use!!' })
-
-    const existingUserByWalletAddress = await User.findOne({ walletAddress })
-    if (existingUserByWalletAddress && !isAdmin && roleType === ROLE_TYPES.USER)
-        return res.status(400).json({ error: 'The wallet address is already in use!!' })
-
-
-    // Get minimum payout settings
-    const payoutSettings = await PayoutSetting.findOne()
-    const minPayoutAmount = payoutSettings ? payoutSettings.minimumBalance : 0
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -39,41 +30,14 @@ exports.createUser = async (req, res) => {
     const user = new User({
         name,
         email,
-        walletAddress,
         phoneNo,
         password: hashedPassword,
-        minPayoutAmount,
-        orderedHashrate: 0,
-        electricitySpendings: 0,
         roleType,
         isAdmin,
         origin,
-        createdBy,
-        electricityExchange
+        createdBy
     })
     await user.save()
-
-    if (!isAdmin) {
-        // Create mining record for the user
-        const mining = new Mining({
-            userId: user._id,
-            hour: [],
-            day: [],
-            week: [],
-            month: [],
-        })
-        await mining.save()
-
-        // Create mining record for the user
-        const balance = new Balance({
-            userId: user._id,
-            balance: 0,
-            kaspa: 0,
-            electricity: 0,
-            payoutRequest: 0,
-        })
-        await balance.save()
-    }
 
     return res.status(200).json({ message: `${isAdmin ? 'Admin' : 'User'} created successfully.`, status: true })
 }
@@ -155,6 +119,7 @@ exports.login = async (req, res) => {
 // Service function for getting all users
 exports.getAllUsers = async (req) => {
     const userId = req.userId
+    const coinId = req.coinId
 
     const getRoleType = await User.findOne({ _id: new ObjectId(userId) })
     const roleType = getRoleType.roleType
@@ -185,10 +150,35 @@ exports.getAllUsers = async (req) => {
         {
             $lookup: {
                 from: 'minings',
-                localField: '_id',
-                foreignField: 'userId',
+
+                let: { userId: '$_id', coinId: coinId },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$userId', '$$userId'] },
+                                    { $eq: ['$coinId', '$$coinId'] },
+                                ],
+                            },
+                        },
+                    },
+                ],
                 as: 'miningData',
-            },
+            }
+        },
+        {
+            $unwind: {
+                path: '$miningData',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $addFields: {
+                walletAddress: '$miningData.settings.walletAddress',
+                electricitySpendings: '$miningData.settings.electricitySpendings',
+                orderedHashrate: '$miningData.settings.orderedHashrate',
+            }
         },
         {
             $project: {

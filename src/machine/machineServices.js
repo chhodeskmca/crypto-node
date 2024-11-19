@@ -1,5 +1,8 @@
 const { Machine, AssignedMachine } = require('./machineModel')
 const User = require('../users/userModel')
+const Mining = require('../mining/miningModel')
+const { ObjectId } = require('../../config/db')
+const Coin = require('../coins/coinModel')
 
 // Service function for getting all machines
 exports.getAllMachines = async (req) => {
@@ -57,20 +60,25 @@ exports.updateMachine = async (machineId, machineData, file) => {
 }
 
 // Service function for assigning a machine to a user
-exports.assignMachine = async (machineData) => {
-    const { userId, machineId, hashrate, performance, electricitySpending } = machineData
+exports.assignMachine = async (req) => {
+    const coinId = req.coinId
+    const { userId, machineId, hashrate, performance, electricitySpending } = req.body
 
-    const user = await User.findById(userId)
-    if (!user) {
-        throw new Error('User does not exist')
+
+    const mining = await Mining.findOne({ userId: new ObjectId(userId), coinId })
+    const coin = await Coin.findById(coinId)
+
+    if (!mining) {
+        throw new Error(`Please assign the ${coin.name} coin to this user first before proceeding!`)
     }
 
-    user.orderedHashrate += parseFloat(hashrate)
-    user.electricitySpendings += parseFloat(electricitySpending)
-    await user.save()
+    mining.settings.orderedHashrate += parseFloat(hashrate)
+    mining.settings.electricitySpendings += parseFloat(electricitySpending)
+    await mining.save()
 
     const assignedMachine = new AssignedMachine({
         userId,
+        coinId,
         machineId,
         hashrate,
         performance,
@@ -83,22 +91,26 @@ exports.assignMachine = async (machineData) => {
 }
 
 // Service function for unassigning a machine from a user
-exports.unassignMachine = async (id) => {
-    const assignedMachine = await AssignedMachine.findById(id)
+exports.unassignMachine = async (req) => {
+
+    const assignedMachine = await AssignedMachine.findById(req.body.id)
     if (!assignedMachine) {
         throw new Error('Assigned machine not found')
     }
 
-    const user = await User.findById(assignedMachine.userId)
-    if (!user) {
+    const mining = await Mining.findOne({
+        userId: assignedMachine.userId,
+        coinId: assignedMachine.coinId
+    })
+    if (!mining) {
         throw new Error('User not found')
     }
 
-    user.orderedHashrate -= parseFloat(assignedMachine.hashrate)
-    user.electricitySpendings -= parseFloat(assignedMachine.electricitySpending)
-    await user.save()
+    mining.settings.orderedHashrate -= parseFloat(assignedMachine.hashrate)
+    mining.settings.electricitySpendings -= parseFloat(assignedMachine.electricitySpending)
+    await mining.save()
 
-    await AssignedMachine.findByIdAndDelete(id)
+    await AssignedMachine.findByIdAndDelete(req.body.id)
     return { status: true, message: 'Machine unassigned successfully' }
 }
 

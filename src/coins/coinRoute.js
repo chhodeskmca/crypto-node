@@ -22,10 +22,23 @@ router.get(
     authenticateToken,
     coinController.getAllCoins
 )
+
+router.get(
+    '/coin/:userId/user',
+    authenticateToken,
+    coinController.getCoinByUserId
+)
+
 router.get(
     '/coin/:id',
     authenticateToken,
     coinController.getCoinById
+)
+
+router.post(
+    '/coin/assign',
+    authenticateToken,
+    coinController.assignCoinToUser
 )
 
 

@@ -56,7 +56,7 @@ exports.assignMachineController = async (req, res) => {
     }
 
     try {
-        const result = await assignMachine(req.body)
+        const result = await assignMachine(req)
         res.status(200).json(result)
     } catch (error) {
         res.status(500).json({ status: false, message: error.message })
@@ -71,7 +71,7 @@ exports.unassignMachineController = async (req, res) => {
     }
 
     try {
-        const result = await unassignMachine(req.body.id)
+        const result = await unassignMachine(req)
         res.status(200).json(result)
     } catch (error) {
         res.status(500).json({ status: false, message: error.message })

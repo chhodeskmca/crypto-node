@@ -3,7 +3,9 @@ const {
     getCoinByIdService,
     createCoinService,
     updateCoinService,
-    deleteCoinService
+    deleteCoinService,
+    assignCoinToUserService,
+    getCoinByUserIdService
 } = require('./coinService')
 
 // Controller for getting all coins
@@ -27,6 +29,33 @@ const getCoinById = async (req, res) => {
         res.status(200).json(coin)
     } catch (error) {
         res.status(500).json({ message: 'Error fetching coin', error })
+    }
+}
+
+// Controller for getting a coin by ID
+const getCoinByUserId = async (req, res) => {
+    const { userId } = req.params
+    try {
+        const coin = await getCoinByUserIdService(userId)
+        if (!coin) {
+            return res.status(404).json({ message: 'Coin not found' })
+        }
+        res.status(200).json(coin)
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching coin', error })
+    }
+}
+
+// Controller for getting a coin by ID
+const assignCoinToUser = async (req, res) => {
+    try {
+        const coin = await assignCoinToUserService(req)
+        if (!coin) {
+            return res.status(404).json({ message: 'Coin not found' })
+        }
+        res.status(200).json(coin)
+    } catch (error) {
+        res.status(500).json({ message: 'Error assigning coin', error })
     }
 }
 
@@ -77,5 +106,7 @@ module.exports = {
     getCoinById,
     createCoin,
     updateCoin,
-    deleteCoin
+    deleteCoin,
+    assignCoinToUser,
+    getCoinByUserId
 }
