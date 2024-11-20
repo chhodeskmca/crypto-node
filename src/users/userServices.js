@@ -182,14 +182,14 @@ exports.getAllUsers = async (req) => {
         {
             $match: matchConditions
         },
-        {
-            $lookup: {
-                from: 'minings',
-                localField: '_id',
-                foreignField: 'userId',
-                as: 'miningData',
-            },
-        },
+        // {
+        //     $lookup: {
+        //         from: 'minings',
+        //         localField: '_id',
+        //         foreignField: 'userId',
+        //         as: 'miningData',
+        //     },
+        // },
         {
             $project: {
                 name: 1,
@@ -200,7 +200,7 @@ exports.getAllUsers = async (req) => {
                 orderedHashrate: 1,
                 electricitySpendings: 1,
                 electricityExchange: 1,
-                miningData: 1,
+                // miningData: 1,
                 created_at: 1,
                 createdAt: 1,
             },
@@ -331,7 +331,6 @@ exports.getUserInfo = async (req, res) => {
     ])
 
     if (!user.length) throw new Error('User not found')
-    console.log('user:', user)
 
     return res.status(200).json({ status: true, data: user[0] })
 }
