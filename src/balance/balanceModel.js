@@ -8,8 +8,9 @@ const balanceSchema = new Schema({
         ref: 'User',
         required: true
     },
-    balance: {
-        type: Number,
+    coinId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Coin',
         required: true
     },
     kaspa: {

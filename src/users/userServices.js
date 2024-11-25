@@ -258,6 +258,7 @@ exports.getMinPayoutAmount = async (req, res) => {
 }
 // Service function for getting user info
 exports.getUserInfo = async (req, res) => {
+    const coinId = req.coinId
     const { userId } = req.params
     const user = await User.aggregate([
         {
@@ -266,8 +267,19 @@ exports.getUserInfo = async (req, res) => {
         {
             $lookup: {
                 from: "assignedmachines",
-                localField: "_id",
-                foreignField: "userId",
+                let: { userId: '$_id', coinId: new ObjectId(coinId) },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$userId', '$$userId'] },
+                                    { $eq: ['$coinId', '$$coinId'] }
+                                ]
+                            }
+                        }
+                    }
+                ],
                 as: "assigned_machines"
             }
         },
@@ -321,7 +333,6 @@ exports.getUserInfo = async (req, res) => {
     ])
 
     if (!user.length) throw new Error('User not found')
-    console.log('user:', user)
 
     return res.status(200).json({ status: true, data: user[0] })
 }

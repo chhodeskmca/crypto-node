@@ -73,7 +73,7 @@ const setupCronJob = () => {
 const initializeServer = () => {
     setupMiddleware()
     setupRoutes()
-    if (process.env.NODE_ENV === "PROD") {
+    if (process.env.NODE_ENV === "DEV") {
         setupCronJob()
     }
     startServer()

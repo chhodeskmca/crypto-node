@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const { successResponse, errorResponse } = require('../../utils/apiResponse')
 const DefaultMining = require('../default-mining/defaultMiningModel')
+const Coin = require('../coins/coinModel')
 
 const miningInstance = new MiningUtils()
 
@@ -33,38 +34,63 @@ exports.getDefaultMining = async () => {
 
 // Service function for getting user earnings
 exports.getUserEarnings = async (req) => {
+    const coinId = req.coinId
     const { userId } = req.body
 
-    const aggregationPipeline = [
+    const coin = await Coin.findById(coinId)
+
+    const aggregation = [
         {
             $match: { _id: new ObjectId(userId) }
         },
         {
             $lookup: {
-                from: 'minings',
-                localField: '_id',
-                foreignField: 'userId',
-                as: 'userMining'
-            }
-        },
-        {
-            $lookup: {
                 from: 'balances',
-                localField: '_id',
-                foreignField: 'userId',
+                let: { userId: '$_id', coinId: new ObjectId(coinId) },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$userId', '$$userId'] },
+                                    { $eq: ['$coinId', '$$coinId'] }
+                                ]
+                            }
+                        }
+                    }
+                ],
                 as: 'userBalance'
             }
         },
         {
+            $lookup: {
+                from: 'minings',
+                let: { userId: '$_id', coinId: new ObjectId(coinId) },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$userId', '$$userId'] },
+                                    { $eq: ['$coinId', '$$coinId'] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: 'userMining'
+            }
+        },
+        {
             $addFields: {
-                userMining: { $arrayElemAt: ['$userMining', 0] },
-                userBalance: { $arrayElemAt: ['$userBalance', 0] }
+                userBalance: { $arrayElemAt: ['$userBalance', 0] },
+                userMining: { $arrayElemAt: ['$userMining', 0] }
             }
         }
-    ];
+    ]
 
     // Execute the aggregation
-    const users = await User.aggregate(aggregationPipeline);
+    const users = await User.aggregate(aggregation)
 
     if (!users.length) {
         throw new Error('User not found')
@@ -72,22 +98,28 @@ exports.getUserEarnings = async (req) => {
 
 
     const user = users[0]
+    const miningSettings = user?.userMining?.settings
     const kaspa = convertStringToNumber(user.userBalance?.kaspa) || 0
-    const minPayout = await PayoutSetting.findOne()
-    const electricityExchange = await DefaultMining.findOne()
-    const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
+    const electricityExchange = miningSettings?.electricityExchange || coin?.settings?.electricityExchange
+
+    const response = await miningInstance.getDefaultMiningData(
+        {
+            'orderedHashRate': miningSettings?.orderedHashrate,
+            'defaultMining': coin?.settings?.mining
+        }
+    )
+
     const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining, kaspa)
 
     const data = {
-        minPayout: convertStringToNumber(minPayout?.minimumBalance) || 0,
-        balance: 0,
+        minPayout: convertStringToNumber(miningSettings?.minPayoutAmount) || 0,
         kaspa: kaspa,
         minute: convertStringToNumber(response.coins),
         minEarning: response.dollars,
         currentDollarPrice: response.price,
-        orderedHashRate: convertStringToNumber(user?.orderedHashrate) || 0,
+        orderedHashRate: convertStringToNumber(miningSettings?.orderedHashrate) || 0,
         electricitySpendings: convertStringToNumber(user.userBalance?.electricity) || 0,
-        electricityExchange: user?.electricityExchange || electricityExchange?.electricityExchange,
+        electricityExchange: electricityExchange,
         ...calculateMiningResponse
     }
 
@@ -96,43 +128,59 @@ exports.getUserEarnings = async (req) => {
 
 // Service function for getting current hash rate
 exports.minePerMinute = async () => {
-    const users = await User.aggregate([
+    const minings = await Mining.aggregate([
         {
             $match: {
-                $or: [
-                    { isAdmin: false },
-                    { isAdmin: "0" },
-                    { isAdmin: { $exists: false } }
-                ]
+                "settings.orderedHashrate": {
+                    $ne: 0
+                }
             }
         },
         {
             $lookup: {
-                from: 'minings',
-                localField: '_id',
-                foreignField: 'userId',
-                as: 'userMining'
+                from: "coins",
+                localField: "coinId",
+                foreignField: "_id",
+                as: "coin"
             }
         },
         {
             $unwind: {
-                path: '$userMining',
+                path: "$coin",
                 preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $addFields: {
+                coinSettings: "$coin.settings"
+            }
+        },
+        {
+            $project: {
+                coin: 0
             }
         }
     ])
 
+    await Promise.all(minings.map(async (mining) => {
+        const miningSettings = mining.settings
+        const coinSettings = mining.coinSettings
 
+        if (!miningSettings || !coinSettings) return
 
-    await Promise.all(users.map(async (user) => {
+        const latestElectricity = convertStringToNumber(miningSettings.electricitySpendings) / 60
 
-        const latestElectricity = convertStringToNumber(user.electricitySpendings) / 60
+        if (miningSettings.orderedHashrate) {
 
-        if (user.userMining && user.orderedHashrate) {
-            const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
+            const response = await miningInstance.getDefaultMiningData(
+                {
+                    'orderedHashRate': miningSettings.orderedHashrate,
+                    'defaultMining': coinSettings.mining
+                }
+            )
 
             if (response) {
-                const modifiedUser = miningInstance.addMiningKaspaToUserArray(user.userMining, response.coins)
+                const modifiedUser = miningInstance.addMiningKaspaToUserArray(mining, response.coins)
 
                 const miningUpdateFields = {
                     minsCount: modifiedUser.minsCount,
@@ -140,9 +188,15 @@ exports.minePerMinute = async () => {
                     earnings: modifiedUser.earnings
                 }
 
-                await Mining.updateOne({ userId: user._id }, { $set: miningUpdateFields }, { upsert: true })
+                await Mining.updateOne({ '_id': mining._id }, { $set: miningUpdateFields }, { upsert: true })
 
-                const userBalance = await Balance.findOne({ userId: user._id })
+                const balanceQuery = {
+                    'userId': mining.userId,
+                    'coinId': mining.coinId
+                }
+
+                const userBalance = await Balance.findOne(balanceQuery)
+
                 const latestKaspa = convertStringToNumber((modifiedUser.hour).slice(-1)[0])
 
                 if (userBalance) {
@@ -150,17 +204,15 @@ exports.minePerMinute = async () => {
                     const newElectricityBalance = convertStringToNumber(userBalance.electricity) + latestElectricity
 
                     await Balance.updateOne(
-                        { userId: user._id },
+                        balanceQuery,
                         {
-                            balance: 0,
                             kaspa: convertStringToNumber(newKaspaBalance),
                             electricity: convertStringToNumber(newElectricityBalance)
                         }
                     )
                 } else {
                     await Balance.create({
-                        userId: user._id,
-                        balance: 0,
+                        ...balanceQuery,
                         kaspa: latestKaspa,
                         electricity: latestElectricity
                     })
