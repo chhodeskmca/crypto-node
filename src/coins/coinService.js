@@ -6,6 +6,7 @@ const Balance = require("../balance/balanceModel")
 const Mining = require("../mining/miningModel")
 const PayoutSettingModel = require("../payout/settings/payoutSettingModel")
 const Coin = require("./coinModel")
+const { ObjectId } = require("../../config/db")
 
 // Service for getting all coins
 const getAllCoinsService = async () => {
@@ -21,8 +22,41 @@ const getCoinByIdService = async (id) => {
 
 // Service for getting a coin by ID
 const getCoinByUserIdService = async (userId) => {
-    const coins = await Mining.find({ userId }).select('-earnings -hour').exec()
-    return successResponse(coins)
+    try {
+        // Validate the userId
+        if (!userId) {
+            throw new Error('UserId is required')
+        }
+
+        const coins = await Mining.aggregate([
+            {
+                $match: { userId: new ObjectId(userId) }, // Match documents by userId
+            },
+            {
+                $lookup: {
+                    from: 'coins', // Name of the collection for `coinId`
+                    localField: 'coinId', // Field in the current collection
+                    foreignField: '_id', // Field in the foreign collection
+                    as: 'coinData', // Alias for the joined data
+                },
+            },
+            {
+                $unwind: '$coinData', // Flatten the array of joined data
+            },
+            {
+                $project: {
+                    earnings: 0,
+                    hour: 0
+                },
+            },
+        ]);
+
+        // Return a success response with the coins data
+        return successResponse(coins)
+    } catch (error) {
+        // Handle errors gracefully and return an appropriate response
+        return errorResponse(error.message || 'Failed to fetch coins')
+    }
 }
 
 // Service for creating a new coin
