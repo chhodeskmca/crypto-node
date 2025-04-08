@@ -22,7 +22,10 @@ const authenticateToken = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         req.user = decoded
         req.userId = decoded.id
-        req.coinId = new ObjectId(coinId)
+
+        if (ObjectId.isValid(coinId)) {
+            req.coinId = new ObjectId(coinId)
+        }
 
         const domain = Object.keys(WEB_DOMAINS).find(domain => req.headers.origin.includes(domain))
         const user = await User.findOne({ _id: new ObjectId(decoded.id) })

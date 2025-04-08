@@ -3,6 +3,8 @@ node_modules/
 
 # Ignore package-lock.json
 package-lock.json
+bun.lock
+yarn.lock
 
 .DS_Store
 
