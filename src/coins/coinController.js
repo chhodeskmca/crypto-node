@@ -7,7 +7,7 @@ const {
     assignCoinToUserService,
     getCoinByUserIdService
 } = require('./coinService')
-
+const Coin = require("./coinModel")
 // Controller for getting all coins
 const getAllCoins = async (req, res) => {
     try {
@@ -73,15 +73,21 @@ const createCoin = async (req, res) => {
 // Controller for updating a coin
 const updateCoin = async (req, res) => {
     const { id } = req.params
-    const { name, symbol, price } = req.body
-    const imagePath = req.file ? req.file.path : null // Handle image path if uploaded
-
+    const { name, symbol, price, color } = req.body
+    // const imagePath = req.file ? req.file.path : null // Handle image path if uploaded
+    const imagePath = req?.file && req?.file?.path.replace('public/', '')
     try {
-        const updatedCoin = await updateCoinService(id, { name, symbol, price, imagePath })
+        const existingCoin = await Coin.findOne({ name, _id: { $ne: id } })
+
+        if (existingCoin) {
+            return res.status(400).json({ message: `Coin with the name "${name}" already exists` })
+        }
+
+        const updatedCoin = await updateCoinService(id, { name, symbol, price, color, imagePath })
         if (!updatedCoin) {
             return res.status(404).json({ message: 'Coin not found' })
         }
-        res.status(200).json({ message: 'Coin updated successfully', updatedCoin })
+        res.status(200).json({ message: 'Coin updated successfully', updatedCoin, status: true })
     } catch (error) {
         res.status(500).json({ message: 'Error updating coin', error })
     }
