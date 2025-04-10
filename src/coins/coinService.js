@@ -195,8 +195,12 @@ const assignCoinToUserService = async (req) => {
 }
 
 // Service for updating a coin
-const updateCoinService = async (id, { name, symbol, price, imagePath }) => {
-    return await Coin.findByIdAndUpdate(id, { name, symbol, price, imagePath }, { new: true }) // Update the coin and return the updated document
+const updateCoinService = async (id, { name, symbol, price, color, imagePath }) => {
+    try {
+        return await Coin.findByIdAndUpdate(id, { name, symbol, price, color, imagePath }, { new: true }) // Update the coin and return the updated document
+    } catch (error) {
+        throw error
+    }
 }
 
 // Service for deleting a coin
