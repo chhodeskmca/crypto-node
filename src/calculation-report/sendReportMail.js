@@ -1,18 +1,18 @@
-// src/mailer/mailer.js
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// Load email template
-function loadTemplate(data) {
-  const templatePath = path.join(__dirname, '..', 'emailTemplates', 'calculationEstimation.html');
+function loadTemplate(data, temp) {
+  const templatePath = path.join(__dirname, '.', 'emailTemplates', temp);
   let template = fs.readFileSync(templatePath, 'utf8');
-  template = template.replace('{{name}}', data.name).replace('{{message}}', data.message);
+  Object.keys(data).forEach(key => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    template = template.replace(regex, data[key]);
+  });
   return template;
 }
 
-// Create transporter
 const transporter = nodemailer.createTransport({
   host: process.env.MAIL_HOST,
   port: process.env.MAIL_PORT,
@@ -23,16 +23,24 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Send email function
-async function sendEmail(to, subject, data) {
+async function sendEmail(to, subject, data, template = 'calculationEstimation.html', attachTerms = false) {
   try {
-    const htmlContent = loadTemplate(data);
+    const htmlContent = loadTemplate(data, template);
+
     const mailOptions = {
       from: process.env.MAIL_USERNAME,
       to,
       subject,
-      html: htmlContent
+      html: htmlContent,
+      attachments: []
     };
+
+    if (attachTerms) {
+      mailOptions.attachments.push({
+        filename: 'GeneralTermsAndConditions.pdf',
+        path: path.join(__dirname, 'attachments', 'GeneralTermsAndConditions.pdf')
+      });
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.response);
