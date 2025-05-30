@@ -19,7 +19,7 @@ exports.calculationReport = async (req, res) => {
 };
 
 exports.sendInvoice = async (req, res) => {
-    const { email, name, amount , spending, electricityPrice} = req.query;
+    const { email, name, amount, spending, electricityPrice } = req.query;
     try {
         await sendEmail(
             email,
@@ -43,12 +43,19 @@ exports.sendInvoice = async (req, res) => {
 
 function generateCalculation(data) {
     const today = new Date().toISOString().split('T')[0];
+    const baseUrl = process.env.NODE_ENV === 'DEV'
+        ? 'http://localhost:3000'
+        : 'https://api.mrcryptomining.com';
+
+    const invoiceLink = `${baseUrl}/api/send-invoice?email=${data.email}&name=${data.name}&amount=${data.investmentAmount}&electricityPrice=${data.electricityPrice}&spending=${data.spending}`;
+
     return {
         name: data.name,
         email: data.email,
         investmentAmount: data.investmentAmount,
         spending: data.spending,
         electricityPrice: data.electricityPrice,
+        invoiceLink: invoiceLink,
         date: today,
         hardware: `KS5 PRO 114th/s ${data.specifications}kw`,
         kwRate: 0.06,
