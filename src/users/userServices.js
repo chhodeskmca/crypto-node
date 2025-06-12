@@ -16,17 +16,19 @@ const { ObjectId } = mongoose.Types
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin, electricityExchange } = req.body
+    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin, electricityExchange, walletToBeProvided } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
     if (existingUserByEmail)
         return res.status(400).json({ error: 'The email address is already in use!!' })
 
-    const existingUserByWalletAddress = await User.findOne({ walletAddress })
-    if (existingUserByWalletAddress && !isAdmin && roleType === ROLE_TYPES.USER)
-        return res.status(400).json({ error: 'The wallet address is already in use!!' })
-
+     if (!walletToBeProvided && !isAdmin && roleType === ROLE_TYPES.USER) {
+        const existingUserByWalletAddress = await User.findOne({ walletAddress })
+        if (existingUserByWalletAddress) {
+            return res.status(400).json({ error: 'The wallet address is already in use!!' })
+        }
+    }
 
     // Get minimum payout settings
     const payoutSettings = await PayoutSetting.findOne()
@@ -49,7 +51,8 @@ exports.createUser = async (req, res) => {
         isAdmin,
         origin,
         createdBy,
-        electricityExchange
+        electricityExchange,
+        walletToBeProvided
     })
     await user.save()
 
@@ -196,6 +199,7 @@ exports.getAllUsers = async (req) => {
                 email: 1,
                 phoneNo: 1,
                 walletAddress: 1,
+                walletToBeProvided:1,
                 minPayoutAmount: 1,
                 orderedHashrate: 1,
                 electricitySpendings: 1,
@@ -337,7 +341,7 @@ exports.getUserInfo = async (req, res) => {
 
 // Service function for updating a user
 exports.updateUser = async (userData, userId) => {
-    const { name, email, walletAddress, phoneNo, electricityExchange } = userData
+    const { name, email, walletAddress, phoneNo, electricityExchange,walletToBeProvided } = userData
     const user = await User.findById(userId)
     if (!user) throw new Error('User not found')
 
@@ -346,6 +350,7 @@ exports.updateUser = async (userData, userId) => {
     user.walletAddress = walletAddress
     user.phoneNo = phoneNo
     user.electricityExchange = electricityExchange
+    user.walletToBeProvided = walletToBeProvided
     await user.save()
 
     return user

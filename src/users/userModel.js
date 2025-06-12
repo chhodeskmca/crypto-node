@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     walletAddress: String,
+    walletToBeProvided:Boolean,
     created_at: Date,
     updated_at: Date,
     origin: {
