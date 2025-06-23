@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const bcrypt = require("bcryptjs")
 const { Machine, AssignedMachine } = require('./machineModel')
 const User = require('../users/userModel')
 const { sendEmail } = require('./sendEmail');
