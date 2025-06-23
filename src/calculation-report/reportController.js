@@ -1,4 +1,4 @@
-const CalculationReport = require('./reportModel')
+const { Invoice, CalculationReport } = require('./reportModel')
 const { sendEmail } = require('./sendReportMail');
 const path = require('path');
 exports.calculationReport = async (req, res) => {
@@ -21,6 +21,7 @@ exports.calculationReport = async (req, res) => {
 exports.sendInvoice = async (req, res) => {
     const { email, name, amount, spending, electricityPrice } = req.query;
     try {
+        await Invoice.create({ email, name, status: 'pending' });
         await sendEmail(
             email,
             'Invoice from Mr.Crypto Mining',

@@ -19,7 +19,7 @@ const forgotPasswordRoutes = require('./src/forgotPassword/forgotPasswordRoute')
 const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRoutes')
 const MiningController = require('./src/mining/miningController')
 const CalculationReportRoutes = require('./src/calculation-report/reportRoutes')
-
+const invoicesRoutes = require('./src/invoices/invoicesRoutes')
 
 const app = express()
 
@@ -49,6 +49,7 @@ const setupRoutes = () => {
     app.use('/api', settingsRoute)
     app.use('/api', transactionsRoutes)
     app.use('/api', CalculationReportRoutes)
+    app.use('/api', invoicesRoutes)
 }
 
 // Start the server and connect to the database

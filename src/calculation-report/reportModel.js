@@ -12,4 +12,21 @@ const calculationReportSchema = new mongoose.Schema({
   specifications: { type: String, required: true }
 }, { timestamps: true });
 
-module.exports = mongoose.model('CalculationReport', calculationReportSchema);
+
+const invoiceSchema = new mongoose.Schema({
+  email: String,
+  name: String,
+  status: {
+    type: String,
+    default: 'pending'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const Invoice = mongoose.model('Invoice', invoiceSchema);
+const CalculationReport = mongoose.model('CalculationReport', calculationReportSchema);
+
+module.exports = { Invoice, CalculationReport }
