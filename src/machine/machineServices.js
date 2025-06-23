@@ -64,10 +64,14 @@ exports.assignMachine = async (machineData) => {
         throw new Error('User does not exist')
     }
 
-    const tempPassword = crypto.randomBytes(4).toString('hex');
 
+    const tempPassword = crypto.randomBytes(4).toString('hex');
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    user.password = hashedPassword;
     user.orderedHashrate += parseFloat(hashrate)
     user.electricitySpendings += parseFloat(electricitySpending)
+
     await user.save()
 
     const assignedMachine = new AssignedMachine({
