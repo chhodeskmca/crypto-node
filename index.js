@@ -36,7 +36,7 @@ const setupMiddleware = () => {
 }
 
 // Apply routes with common prefix
-const setupRoutes = () => {
+ const setupRoutes = () => {
     app.use('/api', userRoutes)
     app.use('/api', userPerformanceRoutes)
     app.use('/api', forgotPasswordRoutes)
