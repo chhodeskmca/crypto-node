@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Calculation Report</title>
+  </head>
+  <body>
+    <p>Dear {{name}},</p>
+    <p>
+      As per arrangment I am sending you calculations based on investment amount
+      {{investmentAmount}} USD.
+      <br />
+      All calculations are made based on market conditions on {{date}}.
+    </p>
+    <p>
+      By completing the payment, the general terms and conditions attached
+      become binding for both parties and act as a contract.
+      <br />
+      So please take a look at them.
+    </p>
+    <p>
+      Offer is available till EOB {{date}}, because price of hardware fluctuates
+      with market.
+      <br />
+      Looking forward to our cooperation.
+    </p>
+
+    <p>
+      If you'd like to proceed, click the button below to receive your invoice:
+    </p>
+
+    <a
+      href="{{invoiceLink}}"
+      style="
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+      "
+    >
+      Send Invoice
+    </a>
+
+    <p>Thank you in advance.<br />Mr.Crypto Mining Team</p>
+  </body>
+</html>

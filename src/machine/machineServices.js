@@ -1,5 +1,8 @@
+const crypto = require('crypto');
+const bcrypt = require("bcryptjs")
 const { Machine, AssignedMachine } = require('./machineModel')
 const User = require('../users/userModel')
+const { sendEmail } = require('./sendEmail');
 
 // Service function for getting all machines
 exports.getAllMachines = async () => {
@@ -57,13 +60,19 @@ exports.updateMachine = async (machineId, machineData, file) => {
 exports.assignMachine = async (machineData) => {
     const { userId, machineId, hashrate, performance, electricitySpending } = machineData
 
-    const user = await User.findById(userId)
+    let user = await User.findById(userId)
     if (!user) {
         throw new Error('User does not exist')
     }
 
+
+    const tempPassword = crypto.randomBytes(4).toString('hex');
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    user.password = hashedPassword;
     user.orderedHashrate += parseFloat(hashrate)
     user.electricitySpendings += parseFloat(electricitySpending)
+
     await user.save()
 
     const assignedMachine = new AssignedMachine({
@@ -73,6 +82,24 @@ exports.assignMachine = async (machineData) => {
         performance,
         electricitySpending
     })
+
+    const url = process.env.NODE_ENV === 'DEV'
+        ? 'http://localhost:5173/login'
+        : 'https://api.mrcryptomining.com/login';
+
+    await sendEmail(
+        user.email,
+        'Your Crypto Mining Account Details',
+        {
+            name: user.name,
+            email: user.email,
+            password: tempPassword,
+            year: new Date().getFullYear(),
+            url
+        },
+        'userEmail.html',
+        true
+    );
 
     await assignedMachine.save()
 
