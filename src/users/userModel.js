@@ -19,12 +19,16 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     walletAddress: String,
-    walletToBeProvided:Boolean,
+    walletToBeProvided: Boolean,
     created_at: Date,
     updated_at: Date,
     origin: {
         type: String,
         default: null
+    },
+    hasReceivedCredentials: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true,
