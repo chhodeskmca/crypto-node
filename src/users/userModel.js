@@ -5,6 +5,19 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     password: String,
+    encryptedPassword: {
+        type: String,
+        select: false
+    },
+    encryptionIv: {
+        type: String,
+        select: false
+    },
+    isNewUser: {
+        type: Boolean,
+        default: true,
+        select: false
+    },
     isAdmin: Boolean,
     phoneNo: String,
     orderedHashrate: Number,
@@ -26,10 +39,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-    hasReceivedCredentials: {
-        type: Boolean,
-        default: false
-    }
 }, {
     timestamps: true,
 });

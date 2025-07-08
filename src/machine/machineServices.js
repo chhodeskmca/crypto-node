@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs")
 const { Machine, AssignedMachine } = require('./machineModel')
 const User = require('../users/userModel')
 const { sendEmail } = require('./sendEmail');
+const { decryptPassword } = require("../../utils/helper")
 
 // Service function for getting all machines
 exports.getAllMachines = async () => {
@@ -60,7 +61,8 @@ exports.updateMachine = async (machineId, machineData, file) => {
 exports.assignMachine = async (machineData) => {
     const { userId, machineId, hashrate, performance, electricitySpending } = machineData;
 
-    let user = await User.findById(userId);
+    // ✅ Fetch all relevant fields at once
+    let user = await User.findById(userId).select('+isNewUser +encryptedPassword +encryptionIv');
     if (!user) {
         throw new Error('User does not exist');
     }
@@ -68,12 +70,8 @@ exports.assignMachine = async (machineData) => {
     user.orderedHashrate += parseFloat(hashrate);
     user.electricitySpendings += parseFloat(electricitySpending);
 
-    if (!user.hasReceivedCredentials) {
-        const tempPassword = crypto.randomBytes(4).toString('hex');
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-        user.password = hashedPassword;
-        user.hasReceivedCredentials = true;
+    if (user.isNewUser) {
+        const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
 
         const url = process.env.NODE_ENV === 'DEV'
             ? 'http://localhost:5173/login'
@@ -85,13 +83,15 @@ exports.assignMachine = async (machineData) => {
             {
                 name: user.name,
                 email: user.email,
-                password: tempPassword,
+                password: originalPassword,
                 year: new Date().getFullYear(),
                 url
             },
             'userEmail.html',
             true
         );
+
+        user.isNewUser = false; 
     }
 
     await user.save();
@@ -108,6 +108,7 @@ exports.assignMachine = async (machineData) => {
 
     return { status: true, message: 'Machine assigned successfully' };
 };
+
 
 // Service function for unassigning a machine from a user
 exports.unassignMachine = async (id) => {
