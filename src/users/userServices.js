@@ -8,7 +8,7 @@ const moment = require('moment')
 const Balance = require("../balance/balanceModel")
 const { successResponse } = require("../../utils/apiResponse")
 const { default: mongoose } = require("mongoose")
-const { customError } = require("../../utils/helper")
+const { customError, encryptPassword } = require("../../utils/helper")
 const AdminAuthentication = require("../authentication/adminAuthenticationModel")
 const { mailSMTP, ROLE_TYPES } = require("../../config")
 const { ObjectId } = mongoose.Types
@@ -16,26 +16,44 @@ const { ObjectId } = mongoose.Types
 
 // Service function for creating a user
 exports.createUser = async (req, res) => {
-    const { name, email, password, phoneNo = '', roleType, isAdmin, createdBy, origin } = req.body
+    const { name, email, walletAddress, password, phoneNo = '', roleType, isAdmin, createdBy, origin, electricityExchange, walletToBeProvided } = req.body
 
     // Check if email or wallet address is already in use
     const existingUserByEmail = await User.findOne({ email })
     if (existingUserByEmail)
         return res.status(400).json({ error: 'The email address is already in use!!' })
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    if (!walletToBeProvided && !isAdmin && roleType === ROLE_TYPES.USER) {
+        const existingUserByWalletAddress = await User.findOne({ walletAddress })
+        if (existingUserByWalletAddress) {
+            return res.status(400).json({ error: 'The wallet address is already in use!!' })
+        }
+    }
+
+    // Get minimum payout settings
+    const payoutSettings = await PayoutSetting.findOne()
+    const minPayoutAmount = payoutSettings ? payoutSettings.minimumBalance : 0
+
+    const rawPassword = password;
+    const { encryptedData, iv } = encryptPassword(rawPassword);
 
     // Create and save user
     const user = new User({
         name,
         email,
         phoneNo,
-        password: hashedPassword,
+        password: await bcrypt.hash(rawPassword, 10),
+        encryptedPassword: encryptedData,
+        encryptionIv: iv,
+        minPayoutAmount,
+        orderedHashrate: 0,
+        electricitySpendings: 0,
         roleType,
         isAdmin,
         origin,
-        createdBy
+        createdBy,
+        electricityExchange,
+        walletToBeProvided
     })
     await user.save()
 
@@ -180,17 +198,26 @@ exports.getAllUsers = async (req) => {
                 orderedHashrate: '$miningData.settings.orderedHashrate',
             }
         },
+        // {
+        //     $lookup: {
+        //         from: 'minings',
+        //         localField: '_id',
+        //         foreignField: 'userId',
+        //         as: 'miningData',
+        //     },
+        // },
         {
             $project: {
                 name: 1,
                 email: 1,
                 phoneNo: 1,
                 walletAddress: 1,
+                walletToBeProvided: 1,
                 minPayoutAmount: 1,
                 orderedHashrate: 1,
                 electricitySpendings: 1,
                 electricityExchange: 1,
-                miningData: 1,
+                // miningData: 1,
                 created_at: 1,
                 createdAt: 1,
             },
@@ -339,7 +366,7 @@ exports.getUserInfo = async (req, res) => {
 
 // Service function for updating a user
 exports.updateUser = async (userData, userId) => {
-    const { name, email, walletAddress, phoneNo, electricityExchange } = userData
+    const { name, email, walletAddress, phoneNo, electricityExchange, walletToBeProvided } = userData
     const user = await User.findById(userId)
     if (!user) throw new Error('User not found')
 
@@ -348,6 +375,7 @@ exports.updateUser = async (userData, userId) => {
     user.walletAddress = walletAddress
     user.phoneNo = phoneNo
     user.electricityExchange = electricityExchange
+    user.walletToBeProvided = walletToBeProvided
     await user.save()
 
     return user

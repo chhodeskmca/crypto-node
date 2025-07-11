@@ -5,6 +5,19 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     password: String,
+    encryptedPassword: {
+        type: String,
+        select: false
+    },
+    encryptionIv: {
+        type: String,
+        select: false
+    },
+    isNewUser: {
+        type: Boolean,
+        default: true,
+        select: false
+    },
     isAdmin: Boolean,
     phoneNo: String,
     orderedHashrate: Number,
@@ -19,12 +32,13 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     walletAddress: String,
+    walletToBeProvided: Boolean,
     created_at: Date,
     updated_at: Date,
     origin: {
         type: String,
         default: null
-    }
+    },
 }, {
     timestamps: true,
 });
