@@ -92,28 +92,33 @@ exports.assignMachine = async (req) => {
 
     // Step 3: Handle new user welcome email
     if (user.isNewUser) {
-        const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
+        if (user.encryptedPassword && user.encryptionIv) {
+            const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
 
-        const url = process.env.NODE_ENV === 'DEV'
-            ? 'http://localhost:5173/login'
-            : 'https://api.mrcryptomining.com/login';
+            const url = process.env.NODE_ENV === 'DEV'
+                ? 'http://localhost:5173/login'
+                : 'https://api.mrcryptomining.com/login';
 
-        await sendEmail(
-            user.email,
-            'Your Crypto Mining Account Details',
-            {
-                name: user.name,
-                email: user.email,
-                password: originalPassword,
-                year: new Date().getFullYear(),
-                url
-            },
-            'userEmail.html',
-            true
-        );
+            await sendEmail(
+                user.email,
+                'Your Crypto Mining Account Details',
+                {
+                    name: user.name,
+                    email: user.email,
+                    password: originalPassword,
+                    year: new Date().getFullYear(),
+                    url
+                },
+                'userEmail.html',
+                true
+            );
+        } else {
+            console.warn(`Skipping welcome email — missing encrypted credentials for user ${user._id}`);
+        }
 
         user.isNewUser = false;
     }
+
 
     await user.save();
 
