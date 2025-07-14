@@ -61,7 +61,6 @@ exports.updateMachine = async (machineId, machineData, file) => {
 exports.assignMachine = async (machineData) => {
     const { userId, machineId, hashrate, performance, electricitySpending } = machineData;
 
-    // ✅ Fetch all relevant fields at once
     let user = await User.findById(userId).select('+isNewUser +encryptedPassword +encryptionIv');
     if (!user) {
         throw new Error('User does not exist');
@@ -71,28 +70,33 @@ exports.assignMachine = async (machineData) => {
     user.electricitySpendings += parseFloat(electricitySpending);
 
     if (user.isNewUser) {
-        const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
+        if (user.encryptedPassword && user.encryptionIv) {
+            const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
 
-        const url = process.env.NODE_ENV === 'DEV'
-            ? 'http://localhost:5173/login'
-            : 'https://api.mrcryptomining.com/login';
+            const url = process.env.NODE_ENV === 'DEV'
+                ? 'http://localhost:5173/login'
+                : 'https://api.mrcryptomining.com/login';
 
-        await sendEmail(
-            user.email,
-            'Your Crypto Mining Account Details',
-            {
-                name: user.name,
-                email: user.email,
-                password: originalPassword,
-                year: new Date().getFullYear(),
-                url
-            },
-            'userEmail.html',
-            true
-        );
+            await sendEmail(
+                user.email,
+                'Your Crypto Mining Account Details',
+                {
+                    name: user.name,
+                    email: user.email,
+                    password: originalPassword,
+                    year: new Date().getFullYear(),
+                    url
+                },
+                'userEmail.html',
+                true
+            );
+        } else {
+            console.warn(`Skipping welcome email — missing encrypted credentials for user ${user._id}`);
+        }
 
-        user.isNewUser = false; 
+        user.isNewUser = false;
     }
+
 
     await user.save();
 

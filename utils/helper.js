@@ -24,15 +24,6 @@ exports.encryptPassword = (password) => {
     };
 };
 
-// exports.decryptPassword = (encryptedData, ivHex) => {
-//     const ivBuffer = Buffer.from(ivHex, 'hex');
-//     const encryptedText = Buffer.from(encryptedData, 'hex');
-//     const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey), ivBuffer);
-//     let decrypted = decipher.update(encryptedText);
-//     decrypted = Buffer.concat([decrypted, decipher.final()]);
-//     return decrypted.toString();
-// };
-
 exports.decryptPassword = (encryptedText, ivHex) => {
     const iv = Buffer.from(ivHex, 'hex');
     const encryptedData = Buffer.from(encryptedText, 'hex');
