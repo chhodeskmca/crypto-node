@@ -20,6 +20,7 @@ const userPerformanceRoutes = require('./src/userPerformance/userPerformanceRout
 const MiningController = require('./src/mining/miningController')
 const CalculationReportRoutes = require('./src/calculation-report/reportRoutes')
 const invoicesRoutes = require('./src/invoices/invoicesRoutes')
+const balanceRoutes = require("./src/balance/balanceRoute")
 
 const app = express()
 
@@ -37,7 +38,7 @@ const setupMiddleware = () => {
 }
 
 // Apply routes with common prefix
- const setupRoutes = () => {
+const setupRoutes = () => {
     app.use('/api', userRoutes)
     app.use('/api', userPerformanceRoutes)
     app.use('/api', forgotPasswordRoutes)
@@ -50,6 +51,7 @@ const setupMiddleware = () => {
     app.use('/api', transactionsRoutes)
     app.use('/api', CalculationReportRoutes)
     app.use('/api', invoicesRoutes)
+    app.use('/api', balanceRoutes)
 }
 
 // Start the server and connect to the database
