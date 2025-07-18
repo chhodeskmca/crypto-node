@@ -10,16 +10,23 @@ exports.updateUserElectricity = async (req, res) => {
         if (!balance) {
             return res.status(404).json({ status: false, message: 'Balance not found' });
         }
+        let historyDoc = await ElectricityHistory.findOne({ userId });
 
-        // Store old electricity value into history
-        const historyEntry = new ElectricityHistory({
-            userId,
-            previousElectricity: balance.electricity,
+        if (!historyDoc) {
+            historyDoc = new ElectricityHistory({ userId, history: [] });
+        }
+
+        historyDoc.history.unshift({
+            value: balance.electricity,
+            timestamp: new Date()
         });
 
-        await historyEntry.save();
+        if (historyDoc.history.length > 30) {
+            historyDoc.history = historyDoc.history.slice(0, 30);
+        }
 
-        // Update the electricity value
+        await historyDoc.save();
+
         balance.electricity = newElectricity;
         await balance.save();
 

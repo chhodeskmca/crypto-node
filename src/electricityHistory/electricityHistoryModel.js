@@ -1,23 +1,15 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-const electricityHistorySchema = new Schema({
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    previousElectricity: {
-        type: Number,
-        required: true,
-    },
-    recordedAt: {
-        type: Date,
-        default: Date.now,
-    }
-}, {
-    timestamps: true
+const electricityHistorySchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    history: [
+        {
+            value: { type: String, required: true },
+            timestamp: { type: Date, default: Date.now }
+        }
+    ]
 });
+
 
 const ElectricityHistory = mongoose.model('ElectricityHistory', electricityHistorySchema);
 module.exports = ElectricityHistory;
