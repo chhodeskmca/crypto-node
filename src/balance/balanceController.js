@@ -1,5 +1,5 @@
 const Balance = require('../balance/balanceModel');
-const ElectricityHistory = require('../electricityHistory/electricityHistoryModel');
+const { ElectricityHistory, BalanceHistory } = require('../balanceHistory/historyModal');
 
 exports.updateUserElectricity = async (req, res) => {
     const { userId, newElectricity } = req.body;
@@ -34,5 +34,47 @@ exports.updateUserElectricity = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: false, message: 'Server error' });
+    }
+};
+
+exports.updateUserBalance = async (req, res) => {
+    const { userId, newBalance } = req.body;
+
+    const allowedUserId = '687e3821a9ea55cdef54a037';
+
+    if (userId !== allowedUserId) {
+        return res.status(403).json({ status: false, message: 'Not allowed to update this user' });
+    }
+
+    try {
+        const balance = await Balance.findOne({ userId });
+
+        if (!balance) {
+            return res.status(404).json({ status: false, message: 'Balance not found' });
+        }
+        let historyDoc = await BalanceHistory.findOne({ userId });
+
+        if (!historyDoc) {
+            historyDoc = new BalanceHistory({ userId, history: [] });
+        }
+
+        historyDoc.history.unshift({
+            value: balance.kaspa,
+            timestamp: new Date()
+        });
+
+        if (historyDoc.history.length > 30) {
+            historyDoc.history = historyDoc.history.slice(0, 30);
+        }
+
+        await historyDoc.save();
+
+        balance.kaspa = newBalance;
+        await balance.save();
+
+        res.json({ status: true, message: 'Balance updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: false, message: error || 'Server error' });
     }
 };
