@@ -69,33 +69,34 @@ exports.assignMachine = async (machineData) => {
     user.orderedHashrate += parseFloat(hashrate);
     user.electricitySpendings += parseFloat(electricitySpending);
 
-    if (user.isNewUser) {
-        if (user.encryptedPassword && user.encryptionIv) {
-            const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
+    //* Disabling this email due to Godaddy SMTP issues
+    // if (user.isNewUser) {
+    //     if (user.encryptedPassword && user.encryptionIv) {
+    //         const originalPassword = decryptPassword(user.encryptedPassword, user.encryptionIv);
 
-            const url = process.env.NODE_ENV === 'DEV'
-                ? 'http://localhost:5173/login'
-                : 'https://api.mrcryptomining.com/login';
+    //         const url = process.env.NODE_ENV === 'DEV'
+    //             ? 'http://localhost:5173/login'
+    //             : 'https://api.mrcryptomining.com/login';
 
-            await sendEmail(
-                user.email,
-                'Your Crypto Mining Account Details',
-                {
-                    name: user.name,
-                    email: user.email,
-                    password: originalPassword,
-                    year: new Date().getFullYear(),
-                    url
-                },
-                'userEmail.html',
-                true
-            );
-        } else {
-            console.warn(`Skipping welcome email — missing encrypted credentials for user ${user._id}`);
-        }
+    //         await sendEmail(
+    //             user.email,
+    //             'Your Crypto Mining Account Details',
+    //             {
+    //                 name: user.name,
+    //                 email: user.email,
+    //                 password: originalPassword,
+    //                 year: new Date().getFullYear(),
+    //                 url
+    //             },
+    //             'userEmail.html',
+    //             true
+    //         );
+    //     } else {
+    //         console.warn(`Skipping welcome email — missing encrypted credentials for user ${user._id}`);
+    //     }
 
-        user.isNewUser = false;
-    }
+    //     user.isNewUser = false;
+    // }
 
 
     await user.save();
