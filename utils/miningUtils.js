@@ -9,6 +9,7 @@ class MiningUtils {
 
     async getCurrentKaspaPrice() {
         try {
+            console.log('Fetching current Kaspa price from API...')
             const { data } = await axios.get(`${this.url}/prices`)
             if (!data.status) {
                 console.error('API response status is false:', data)
@@ -19,7 +20,7 @@ class MiningUtils {
                 price: data.data.price_usd,
             }
         } catch (error) {
-            console.error('Error fetching Kaspa mining data:', error.message)
+            console.error('Error while fetching Kaspa price:', error.message)
             return { price: 0.135438 }
         }
     }
@@ -125,9 +126,7 @@ class MiningUtils {
         }
     }
 
-
-
-    async getDefaultMiningData(orderedHashRate) {
+    async getDefaultMiningData(orderedHashRate, currentPrice) {
 
         try {
             const defaultMining = await DefaultMining.findOne().exec()
@@ -135,7 +134,7 @@ class MiningUtils {
             const maximum = defaultMining ? defaultMining.maximum : 17
 
             const kaspa = (Math.random() * (maximum - minimum) + minimum) / 24 / 60
-            const currentPrice = (await this.getCurrentKaspaPrice()).price
+
 
             return {
                 coins: kaspa * orderedHashRate,

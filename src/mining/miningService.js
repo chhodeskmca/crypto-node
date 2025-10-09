@@ -73,9 +73,13 @@ exports.getUserEarnings = async (req) => {
 
     const user = users[0]
     const kaspa = convertStringToNumber(user.userBalance?.kaspa) || 0
+
     const minPayout = await PayoutSetting.findOne()
     const electricityExchange = await DefaultMining.findOne()
-    const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
+
+    const { price: currentPrice } = await miningInstance.getCurrentKaspaPrice()
+    const response = await miningInstance.getDefaultMiningData(user.orderedHashrate, currentPrice)
+
     const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining, kaspa)
 
     const data = {
@@ -123,13 +127,14 @@ exports.minePerMinute = async () => {
     ])
 
 
-
+    const { price: currentPrice } = await miningInstance.getCurrentKaspaPrice()
     await Promise.all(users.map(async (user) => {
 
         const latestElectricity = convertStringToNumber(user.electricitySpendings) / 60
 
         if (user.userMining && user.orderedHashrate) {
-            const response = await miningInstance.getDefaultMiningData(user.orderedHashrate)
+            const response = await miningInstance.getDefaultMiningData(user.orderedHashrate, currentPrice)
+
 
             if (response) {
                 const modifiedUser = miningInstance.addMiningKaspaToUserArray(user.userMining, response.coins)
