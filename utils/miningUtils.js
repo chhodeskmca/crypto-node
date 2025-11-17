@@ -3,21 +3,21 @@ const DefaultMining = require('../src/default-mining/defaultMiningModel') // Ass
 const moment = require('moment')
 class MiningUtils {
     constructor() {
-        this.url = process.env.NANOPOOL_URL
+        this.url = process.env.COINGENKO_URL || 'https://api.coingecko.com/api/v3'
         this.defaultMiningId = '66d80de45059596f8f918949'
     }
 
     async getCurrentKaspaPrice() {
         try {
             console.log('Fetching current Kaspa price from API...')
-            const { data } = await axios.get(`${this.url}/prices`)
+            const { data } = await axios.get(`${this.url}/simple/price?ids=kaspa&vs_currencies=usd`)
             if (!data.status) {
                 console.error('API response status is false:', data)
                 return { price: 0.135438 }
             }
 
             return {
-                price: data.data.price_usd,
+                price: data?.kaspa?.usd,
             }
         } catch (error) {
             console.error('Error while fetching Kaspa price:', error.message)
