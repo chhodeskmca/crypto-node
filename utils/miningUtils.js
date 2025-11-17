@@ -11,8 +11,8 @@ class MiningUtils {
         try {
             console.log('Fetching current Kaspa price from API...')
             const { data } = await axios.get(`${this.url}/simple/price?ids=kaspa&vs_currencies=usd`)
-            if (!data.status) {
-                console.error('API response status is false:', data)
+            if (!data.kaspa?.usd) {
+                console.error('API response kaspa usd not found:', data)
                 return { price: 0.135438 }
             }
 
