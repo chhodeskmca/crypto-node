@@ -58,10 +58,13 @@ class MiningUtils {
             this.updateArray(hour, coins, 60)
             let newMinsCount = minsCount + 1
 
-            if (newMinsCount === 60) {
-                newMinsCount = 0
+            if (newMinsCount >= 60) {
+                // Calculate hourly total before resetting
                 const hourTotal = this.sumArray(hour)
                 this.updateArray(earnings, hourTotal, 720, true)
+
+                // Reset for new hour
+                newMinsCount = 0
             }
 
             return {
