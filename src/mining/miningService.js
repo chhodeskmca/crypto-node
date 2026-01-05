@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 const { successResponse, errorResponse } = require('../../utils/apiResponse')
 const DefaultMining = require('../default-mining/defaultMiningModel')
+const DefaultExchangeRates = require('../default-rates/defaultExchangeModel')
 
 const miningInstance = new MiningUtils()
 
@@ -77,7 +78,8 @@ exports.getUserEarnings = async (req) => {
     const minPayout = await PayoutSetting.findOne()
     const electricityExchange = await DefaultMining.findOne()
 
-    const { price: currentPrice } = await miningInstance.getCurrentKaspaPrice()
+    const currentPrice = (await DefaultExchangeRates.findOne())?.usd || 0
+
     const response = await miningInstance.getDefaultMiningData(user.orderedHashrate, currentPrice)
 
     const calculateMiningResponse = await miningInstance.calculateMiningEarnings(user?.userMining, kaspa)
@@ -128,6 +130,9 @@ exports.minePerMinute = async () => {
 
 
     const { price: currentPrice } = await miningInstance.getCurrentKaspaPrice()
+    // update default exchange collection record with new current price
+    await DefaultExchangeRates.updateOne({}, { usd: currentPrice }, { upsert: true })
+
     await Promise.all(users.map(async (user) => {
 
         const latestElectricity = convertStringToNumber(user.electricitySpendings) / 60
