@@ -12,6 +12,7 @@ const { customError, encryptPassword, isUserCreatedWithin30Days } = require("../
 const AdminAuthentication = require("../authentication/adminAuthenticationModel")
 const { mailSMTP, ROLE_TYPES } = require("../../config")
 const { ObjectId } = mongoose.Types
+const {sendMailToNewUserWithoutWallet} = require('../../utils/emailService')
 
 
 // Service function for creating a user
@@ -485,6 +486,18 @@ exports.newUserVerifiedModalStatus = async (req, res) => {
       userId,
       { $set: { isNewUserVerifyModal: true } }
     );
+
+    const user = await User.findOne({
+        _id: userId,
+        walletAddress: "To be provided"
+    });
+
+    if (user) {
+        await sendMailToNewUserWithoutWallet({
+            name: user.name,
+            email: user.email
+        });
+    }
 
     return res.json({
       status: true,
