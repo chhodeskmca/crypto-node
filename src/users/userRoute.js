@@ -75,4 +75,15 @@ router.post(
     UserController.adminTwoFactorAuthenticationController
 )
 
+router.post('/user/verify-new-user-modal',
+    authenticateToken,
+    UserController.newUserVerifiedModalStatus
+);
+
+router.get(
+  '/user/new-user-verify-modal-status/:userId',
+   authenticateToken,
+   UserController.checkNewUserVerifyModalStatus
+);
+
 module.exports = router

@@ -8,10 +8,11 @@ const moment = require('moment')
 const Balance = require("../balance/balanceModel")
 const { successResponse } = require("../../utils/apiResponse")
 const { default: mongoose } = require("mongoose")
-const { customError, encryptPassword } = require("../../utils/helper")
+const { customError, encryptPassword, isUserCreatedWithin30Days } = require("../../utils/helper")
 const AdminAuthentication = require("../authentication/adminAuthenticationModel")
 const { mailSMTP, ROLE_TYPES } = require("../../config")
 const { ObjectId } = mongoose.Types
+const {sendMailToNewUserWithoutWallet} = require('../../utils/emailService')
 
 
 // Service function for creating a user
@@ -54,7 +55,7 @@ exports.createUser = async (req, res) => {
         origin,
         createdBy,
         electricityExchange,
-        walletToBeProvided
+        walletToBeProvided,
     })
     await user.save()
 
@@ -146,9 +147,14 @@ exports.login = async (req, res) => {
                 message: 'We have sent an OTP to your email. Please enter the 6 digit OTP to log in.',
             }
         }
+        // True if the user account was created within the last 30 days (used for USER role–specific logic)
+        let isAccountRecentlyCreated = false;
+        if(user.roleType === 'USER'){
+            isAccountRecentlyCreated = isUserCreatedWithin30Days(user);
+        }
 
         return {
-            token, user, authentication: false,
+            token, user, authentication: false, isAccountRecentlyCreated,
             message: 'Login successfully!'
         }
     } catch (error) {
@@ -463,3 +469,83 @@ exports.adminTwoFactorAuthentication = async (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error', status: false })
     }
 }
+
+
+exports.newUserVerifiedModalStatus = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        status: false,
+        message: 'User ID is required',
+      });
+    }
+
+    await User.findByIdAndUpdate(
+      userId,
+      { $set: { isNewUserVerifyModal: true } }
+    );
+
+    const user = await User.findOne({
+        _id: userId,
+        walletAddress: "To be provided"
+    });
+
+    if (user) {
+        await sendMailToNewUserWithoutWallet({
+            name: user.name,
+            email: user.email
+        });
+    }
+
+    return res.json({
+      status: true,
+      message: 'New user modal status updated',
+    });
+  } catch (error) {
+    console.error('UPDATE NEW USER MODAL STATUS ERROR:', error);
+    return res.status(500).json({
+      status: false,
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+
+exports.checkNewUserVerifyModalStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        status: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const user = await User.findById(userId).select(
+      '_id isNewUserVerifyModal createdAt roleType'
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: 'User not found',
+      });
+    }
+
+    return res.json({
+      status: true,
+      data: {
+        isNewUserVerifyModal: user.isNewUserVerifyModal,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: 'Internal Server Error',
+    });
+  }
+};

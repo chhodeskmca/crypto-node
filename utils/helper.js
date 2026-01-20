@@ -33,3 +33,17 @@ exports.decryptPassword = (encryptedText, ivHex) => {
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
 };
+
+exports.isUserCreatedWithin30Days = (user) =>{
+    if (!user || !user.createdAt) {
+        throw new Error('Invalid user object');
+    }
+
+    const createdAt = new Date(user.createdAt);
+    const now = new Date();
+
+    const diffInMs = now.getTime() - createdAt.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    return diffInDays <= 30;
+}

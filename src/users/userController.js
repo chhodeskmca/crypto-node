@@ -134,3 +134,29 @@ exports.adminTwoFactorAuthenticationController = async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 }
+
+exports.newUserVerifiedModalStatus = async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ error: errors.array()[0].msg })
+    }
+
+    try {
+        await UserServices.newUserVerifiedModalStatus(req, res)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
+exports.checkNewUserVerifyModalStatus = async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return res.status(422).json({ error: errors.array()[0].msg })
+    }
+
+    try {
+        await UserServices.checkNewUserVerifyModalStatus(req, res)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+}
