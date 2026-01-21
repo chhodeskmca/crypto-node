@@ -34,16 +34,43 @@ exports.decryptPassword = (encryptedText, ivHex) => {
     return decrypted.toString();
 };
 
-exports.isUserCreatedWithin30Days = (user) =>{
-    if (!user || !user.createdAt) {
+// exports.isUserCreatedWithin30Days = (user) =>{
+
+//     console.log(user, "user");
+
+//     if ((!user )|| (!user.created_at) || (!user.createdAt)) {
+//         throw new Error('Invalid user object');
+//     }
+
+//     const createdAt = (new Date(user.created_at)) || (new Date(user.createdAt));
+//     const now = new Date();
+
+//     const diffInMs = now.getTime() - createdAt.getTime();
+//     const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+//     return diffInDays <= 30;
+// }
+
+exports.isUserCreatedWithin30Days = (user) => {
+    if (!user) {
         throw new Error('Invalid user object');
     }
 
-    const createdAt = new Date(user.createdAt);
-    const now = new Date();
+    const createdAtValue = user.created_at || user.createdAt;
 
+    if (!createdAtValue) {
+        throw new Error('createdAt not found on user');
+    }
+
+    const createdAt = new Date(createdAtValue);
+
+    if (isNaN(createdAt.getTime())) {
+        throw new Error('Invalid createdAt date');
+    }
+
+    const now = new Date();
     const diffInMs = now.getTime() - createdAt.getTime();
     const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
 
     return diffInDays <= 30;
-}
+};

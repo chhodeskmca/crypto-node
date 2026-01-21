@@ -44,6 +44,8 @@ exports.createPayoutRequest = async (userId) => {
         }
 
         const userBalance = await Balance.findOne({ userId }).exec();
+
+        console.log('User Balance:', userBalance);
         if (!userBalance) {
             throw new Error('User balance not found');
         }
