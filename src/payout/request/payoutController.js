@@ -15,9 +15,11 @@ exports.getPayoutSettingsController = async (req, res) => {
 
 // Controller for updating payout settings
 exports.updatePayoutSettingsController = async (req, res) => {
+      const  {userId}  = req.body
+      console.log("userId", userId)
     try {
         const { minimumBalance } = req.body;
-        const updatedPayoutSettings = await PayoutServices.updatePayoutSettings(minimumBalance);
+        const updatedPayoutSettings = await PayoutServices.updatePayoutSettings(userId,minimumBalance);
         return res.json(successResponse(updatedPayoutSettings));
     } catch (error) {
         return res.status(500).json(errorResponse(error.message));
